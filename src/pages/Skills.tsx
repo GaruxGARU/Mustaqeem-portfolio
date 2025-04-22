@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -46,7 +46,6 @@ const Skills = () => {
         setLoading(false);
         return;
       }
-
       setSkills(data as Skill[]);
       setLoading(false);
     };
@@ -54,8 +53,8 @@ const Skills = () => {
     fetchSkills();
   }, []);
 
-  // Group skills by category
-  const skillsData = React.useMemo(() => {
+  // Group skills by category (stable across page renders by useMemo)
+  const skillsData = useMemo(() => {
     const groups: Record<string, Skill[]> = {};
     skills.forEach(skill => {
       if (!groups[skill.category]) {
@@ -63,10 +62,10 @@ const Skills = () => {
       }
       groups[skill.category].push(skill);
     });
-    return Object.entries(groups).map(([id, skills]) => ({
+    return Object.entries(groups).map(([id, catSkills]) => ({
       id,
       name: id,
-      skills,
+      skills: catSkills,
     }));
   }, [skills]);
 
@@ -199,8 +198,7 @@ const Skills = () => {
           <div className="bg-secondary/20 border border-secondary rounded-lg p-8">
             <h2 className="text-2xl font-semibold mb-6">Skills Cloud</h2>
             <div className="flex flex-wrap justify-center gap-3">
-              {skills.map((skill, index) => {
-                // Calculate font size based on proficiency
+              {skills.map((skill) => {
                 const fontSize = skill ? 0.8 + (skill.proficiency / 100) * 0.8 : 1;
                 const opacity = skill ? 0.5 + (skill.proficiency / 100) * 0.5 : 0.75;
                 return (
@@ -226,3 +224,4 @@ const Skills = () => {
 };
 
 export default Skills;
+

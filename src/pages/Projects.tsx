@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
@@ -15,6 +15,8 @@ interface Project {
   demo_url: string | null;
   github_url: string | null;
   featured: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 const Projects = () => {
@@ -28,6 +30,7 @@ const Projects = () => {
     const fetchProjects = async () => {
       setLoading(true);
       setError(null);
+      // Fetch all projects, show to everyone (portfolio/public page)
       const { data, error } = await supabase
         .from('projects')
         .select('*')
@@ -43,23 +46,26 @@ const Projects = () => {
       const projectsData = (data ?? []) as Project[];
       setProjects(projectsData);
 
-      // Gather unique tags from all projects
-      const tagsSet = new Set<string>();
-      projectsData.forEach(p => {
-        if (Array.isArray(p.tags)) {
-          p.tags.forEach(tag => tagsSet.add(tag));
+      // Gather all unique tags
+      const tagSet = new Set<string>();
+      projectsData.forEach((project) => {
+        if (Array.isArray(project.tags)) {
+          project.tags.forEach((tag) => tag && tagSet.add(tag));
         }
       });
-      setAllTags(Array.from(tagsSet));
+      setAllTags(Array.from(tagSet).sort());
       setLoading(false);
     };
 
     fetchProjects();
   }, []);
 
-  const filteredProjects = filter
-    ? projects.filter(project => Array.isArray(project.tags) && project.tags.includes(filter))
-    : projects;
+  const filteredProjects = useMemo(() => {
+    if (!filter) return projects;
+    return projects.filter((project) =>
+      Array.isArray(project.tags) && project.tags.includes(filter)
+    );
+  }, [projects, filter]);
 
   return (
     <Layout>
@@ -71,7 +77,6 @@ const Projects = () => {
             Explore my portfolio of projects spanning web applications, mobile apps, and various other software solutions.
           </p>
         </div>
-
         <div className="mb-10">
           <h2 className="text-lg font-medium mb-4">Filter by technology:</h2>
           <div className="flex flex-wrap gap-2">
@@ -101,21 +106,23 @@ const Projects = () => {
           <div className="flex justify-center py-12 text-lg">Loading projects...</div>
         ) : error ? (
           <div className="flex justify-center py-12 text-destructive">{error}</div>
+        ) : filteredProjects.length === 0 ? (
+          <div className="flex justify-center py-12 text-muted-foreground">No projects found for this filter.</div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
             {filteredProjects.map((project) => (
               <Card key={project.id} className="bg-secondary/20 border border-secondary overflow-hidden transition-all hover:border-primary/50 flex flex-col animate-on-scroll">
                 <div className="aspect-video relative overflow-hidden group">
                   <img
-                    src={project.image_url ?? "/placeholder.svg"}
+                    src={project.image_url || "/placeholder.svg"}
                     alt={project.title}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background/90"></div>
                   <div className="absolute bottom-4 left-4 flex flex-wrap gap-2">
-                    {project.tags?.slice(0, 3).map((tag, index) => (
+                    {project.tags?.slice(0, 3).map((tag, idx) => (
                       <Badge
-                        key={index}
+                        key={idx}
                         variant="secondary"
                         className={`backdrop-blur-md bg-secondary/30 ${filter === tag ? 'bg-primary/30' : ''}`}
                       >
@@ -158,3 +165,4 @@ const Projects = () => {
 };
 
 export default Projects;
+
