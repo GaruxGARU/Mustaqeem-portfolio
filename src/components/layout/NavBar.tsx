@@ -2,12 +2,20 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { Menu, X, Github, Linkedin } from 'lucide-react';
+import { Menu, X, Github, Linkedin, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/contexts/AuthContext';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const NavBar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user, signOut } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -73,11 +81,30 @@ const NavBar = () => {
             </a>
           </div>
 
-          <Link to="/login">
-            <Button variant="outline" className="animated-border-button ml-4">
-              <span className="relative z-10">Login</span>
-            </Button>
-          </Link>
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="animated-border-button ml-4">
+                  <span className="relative z-10">Dashboard</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link to="/dashboard">Dashboard</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => signOut()}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Sign out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Link to="/login">
+              <Button variant="outline" className="animated-border-button ml-4">
+                <span className="relative z-10">Login</span>
+              </Button>
+            </Link>
+          )}
         </nav>
 
         {/* Mobile Menu Button */}
@@ -103,9 +130,20 @@ const NavBar = () => {
                 {item.name}
               </Link>
             ))}
-            <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
-              <Button>Login</Button>
-            </Link>
+            {user ? (
+              <>
+                <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)} className="text-lg font-medium hover:text-primary transition-colors">
+                  Dashboard
+                </Link>
+                <Button variant="outline" onClick={() => { signOut(); setMobileMenuOpen(false); }}>
+                  Sign Out
+                </Button>
+              </>
+            ) : (
+              <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
+                <Button>Login</Button>
+              </Link>
+            )}
           </nav>
         </div>
       )}
