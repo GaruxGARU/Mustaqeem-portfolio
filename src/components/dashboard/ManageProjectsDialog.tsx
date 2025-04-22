@@ -41,12 +41,13 @@ const ProjectForm = ({
   initialData?: Project | null;
   onCancel: () => void;
 }) => {
+  // Fix: Initialize the form with tags as an empty array instead of an empty string
   const form = useForm({
     defaultValues: initialData || {
       title: '',
       description: '',
       image_url: '',
-      tags: '',
+      tags: [], // Changed from string to empty array
       demo_url: '',
       github_url: '',
       featured: false
@@ -54,10 +55,12 @@ const ProjectForm = ({
   });
 
   const handleSubmit = (data: any) => {
-    // Convert tags string to array
+    // Convert tags string to array if it's a string
     const formattedData = {
       ...data,
-      tags: data.tags ? data.tags.split(',').map((tag: string) => tag.trim()) : []
+      tags: typeof data.tags === 'string' 
+        ? data.tags.split(',').map((tag: string) => tag.trim()) 
+        : data.tags
     };
     onSubmit(formattedData);
   };
@@ -115,6 +118,7 @@ const ProjectForm = ({
                   {...field} 
                   placeholder="React, TypeScript, UI/UX" 
                   value={Array.isArray(field.value) ? field.value.join(', ') : field.value}
+                  onChange={(e) => field.onChange(e.target.value)}
                 />
               </FormControl>
             </FormItem>
