@@ -31,13 +31,14 @@ const Skills = () => {
   const [error, setError] = useState<string | null>(null);
   const [activeSkill, setActiveSkill] = useState<Skill | null>(null);
 
+  // Always fetch latest skills from supabase
   useEffect(() => {
     const fetchSkills = async () => {
       setLoading(true);
       setError(null);
       const { data, error } = await supabase
         .from('skills')
-        .select('*')
+        .select('id, name, category, proficiency, description, projects, years')
         .order('category', { ascending: true });
 
       if (error) {
@@ -46,14 +47,14 @@ const Skills = () => {
         setLoading(false);
         return;
       }
-      setSkills(data as Skill[]);
+      setSkills((data ?? []) as Skill[]);
       setLoading(false);
     };
 
     fetchSkills();
   }, []);
 
-  // Group skills by category (stable across page renders by useMemo)
+  // Group skills by category (stable across renders)
   const skillsData = useMemo(() => {
     const groups: Record<string, Skill[]> = {};
     skills.forEach(skill => {
@@ -224,4 +225,3 @@ const Skills = () => {
 };
 
 export default Skills;
-

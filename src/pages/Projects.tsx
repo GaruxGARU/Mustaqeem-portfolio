@@ -26,14 +26,14 @@ const Projects = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Fix: Always fetch latest data and fix tag extraction from array column
   useEffect(() => {
     const fetchProjects = async () => {
       setLoading(true);
       setError(null);
-      // Fetch all projects, show to everyone (portfolio/public page)
       const { data, error } = await supabase
         .from('projects')
-        .select('*')
+        .select('id, title, description, image_url, tags, demo_url, github_url, featured, created_at, updated_at') // Only select needed fields
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -43,27 +43,35 @@ const Projects = () => {
         setLoading(false);
         return;
       }
-      const projectsData = (data ?? []) as Project[];
+      // Ensure tags are always arrays
+      const projectsData = ((data ?? []) as Project[]).map(p => ({
+        ...p,
+        tags: Array.isArray(p.tags) ? p.tags : [],
+      }));
       setProjects(projectsData);
 
-      // Gather all unique tags
+      // Gather all unique tags from project array fields
       const tagSet = new Set<string>();
       projectsData.forEach((project) => {
         if (Array.isArray(project.tags)) {
-          project.tags.forEach((tag) => tag && tagSet.add(tag));
+          project.tags.forEach((tag) => {
+            if (typeof tag === 'string' && tag.trim() !== '') tagSet.add(tag.trim());
+          });
         }
       });
-      setAllTags(Array.from(tagSet).sort());
+      setAllTags([...tagSet].sort());
       setLoading(false);
     };
 
     fetchProjects();
   }, []);
 
+  // Fix: Filtering for tags (ensure works with tags array)
   const filteredProjects = useMemo(() => {
     if (!filter) return projects;
     return projects.filter((project) =>
-      Array.isArray(project.tags) && project.tags.includes(filter)
+      Array.isArray(project.tags) &&
+      project.tags.some(tag => tag === filter)
     );
   }, [projects, filter]);
 
@@ -165,4 +173,3 @@ const Projects = () => {
 };
 
 export default Projects;
-
