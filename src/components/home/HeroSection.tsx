@@ -29,7 +29,7 @@ const HeroSection = () => {
                 <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Button>
             </Link>
-            <a href="https://github.com" target="_blank" rel="noreferrer">
+            <a href="https://github.com/GaruxGARU" target="_blank" rel="noreferrer">
               <Button size="lg" variant="outline" className="group">
                 <Github className="mr-1 h-4 w-4" />
                 GitHub Profile
