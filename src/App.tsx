@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { HashRouter, Routes, Route } from "react-router-dom"; // Changed to HashRouter
 import { AuthProvider } from './contexts/AuthContext';
 import "./styles/animations.css"; // Import the animations CSS
 
@@ -20,7 +20,7 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <BrowserRouter>
+      <HashRouter> {/* Changed from BrowserRouter to HashRouter */}
         <AuthProvider>
           <Routes>
             <Route path="/" element={<Index />} />
@@ -35,7 +35,7 @@ const App = () => (
           <Toaster />
           <Sonner />
         </AuthProvider>
-      </BrowserRouter>
+      </HashRouter>
     </TooltipProvider>
   </QueryClientProvider>
 );
