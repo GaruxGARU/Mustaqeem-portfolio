@@ -11,10 +11,10 @@ const Footer = () => {
             <div className="relative h-6 w-6">
               <div className="absolute inset-0 bg-primary rounded-full animate-pulse opacity-70"></div>
               <div className="absolute inset-1 bg-background rounded-full flex items-center justify-center">
-                <span className="font-bold text-xs text-primary">DB</span>
+                <span className="font-bold text-xs text-primary">GG</span>
               </div>
             </div>
-            <span className="font-bold text-lg tracking-tight">DevBytePortfolio</span>
+            <span className="font-bold text-lg tracking-tight">GARUXGARU</span>
           </Link>
           <p className="text-sm text-muted-foreground max-w-xs">
             A modern, dark-themed developer portfolio showcasing projects, skills, and experience with a touch of interactivity.
@@ -59,7 +59,7 @@ const Footer = () => {
       <div className="container mt-8 pt-4 border-t border-muted">
         <div className="flex flex-col md:flex-row justify-between items-center">
           <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} DevBytePortfolio. All rights reserved.
+            © {new Date().getFullYear()} GARUXGARU. All rights reserved.
           </p>
           <div className="flex gap-4 mt-2 md:mt-0">
             <Link to="/privacy" className="text-xs text-muted-foreground hover:text-primary transition-colors">
