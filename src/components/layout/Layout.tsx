@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import NavBar from './NavBar';
 import Footer from './Footer';
@@ -16,13 +15,26 @@ const Layout = ({ children }: LayoutProps) => {
     window.scrollTo(0, 0);
   }, [location.pathname]);
 
-  // Animation on scroll effect
+  // Modified animation on scroll effect
   useEffect(() => {
+    // Default opacity for elements to ensure they're visible
+    document.querySelectorAll('.animate-on-scroll').forEach((element) => {
+      if (element instanceof HTMLElement) {
+        element.style.opacity = '1';
+        element.style.visibility = 'visible';
+      }
+    });
+
+    // Optional: keep the animation logic but ensure elements are always visible after
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             entry.target.classList.add('is-visible');
+            if (entry.target instanceof HTMLElement) {
+              entry.target.style.opacity = '1';
+              entry.target.style.visibility = 'visible';
+            }
           }
         });
       },
@@ -43,7 +55,7 @@ const Layout = ({ children }: LayoutProps) => {
   return (
     <div className="min-h-screen flex flex-col">
       <NavBar />
-      <main className="flex-1 pt-24">
+      <main className="flex-1 pt-24 relative z-0">
         {children}
       </main>
       <Footer />

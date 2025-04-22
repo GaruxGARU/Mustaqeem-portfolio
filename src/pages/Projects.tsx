@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
@@ -26,14 +25,13 @@ const Projects = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fix: Always fetch latest data and fix tag extraction from array column
   useEffect(() => {
     const fetchProjects = async () => {
       setLoading(true);
       setError(null);
       const { data, error } = await supabase
         .from('projects')
-        .select('id, title, description, image_url, tags, demo_url, github_url, featured, created_at, updated_at') // Only select needed fields
+        .select('id, title, description, image_url, tags, demo_url, github_url, featured, created_at, updated_at')
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -43,14 +41,13 @@ const Projects = () => {
         setLoading(false);
         return;
       }
-      // Ensure tags are always arrays
+
       const projectsData = ((data ?? []) as Project[]).map(p => ({
         ...p,
         tags: Array.isArray(p.tags) ? p.tags : [],
       }));
       setProjects(projectsData);
 
-      // Gather all unique tags from project array fields
       const tagSet = new Set<string>();
       projectsData.forEach((project) => {
         if (Array.isArray(project.tags)) {
@@ -66,7 +63,6 @@ const Projects = () => {
     fetchProjects();
   }, []);
 
-  // Fix: Filtering for tags (ensure works with tags array)
   const filteredProjects = useMemo(() => {
     if (!filter) return projects;
     return projects.filter((project) =>
@@ -75,10 +71,17 @@ const Projects = () => {
     );
   }, [projects, filter]);
 
+  useEffect(() => {
+    if (projects.length > 0) {
+      console.log("Projects loaded:", projects.length);
+      console.log("First project:", projects[0]);
+    }
+  }, [projects]);
+
   return (
     <Layout>
       <div className="container py-12">
-        <div className="flex flex-col items-center text-center mb-16 animate-on-scroll">
+        <div className="flex flex-col items-center text-center mb-16">
           <h1 className="text-4xl font-bold mb-4">My Projects</h1>
           <div className="h-1 w-20 bg-primary rounded-full mb-6"></div>
           <p className="text-muted-foreground max-w-2xl">
@@ -92,7 +95,6 @@ const Projects = () => {
               variant={filter === null ? "default" : "outline"}
               size="sm"
               onClick={() => setFilter(null)}
-              className="animate-on-scroll"
             >
               All
             </Button>
@@ -102,7 +104,6 @@ const Projects = () => {
                 variant={filter === tag ? "default" : "outline"}
                 size="sm"
                 onClick={() => setFilter(tag)}
-                className="animate-on-scroll"
               >
                 {tag}
               </Button>
@@ -119,12 +120,20 @@ const Projects = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
             {filteredProjects.map((project) => (
-              <Card key={project.id} className="bg-secondary/20 border border-secondary overflow-hidden transition-all hover:border-primary/50 flex flex-col animate-on-scroll">
+              <Card 
+                key={project.id} 
+                className="bg-secondary/20 border border-secondary overflow-hidden transition-all hover:border-primary/50 flex flex-col"
+                style={{ opacity: 1, visibility: 'visible' }}
+              >
                 <div className="aspect-video relative overflow-hidden group">
                   <img
                     src={project.image_url || "/placeholder.svg"}
                     alt={project.title}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    onError={(e) => {
+                      e.currentTarget.src = "/placeholder.svg";
+                      console.log("Failed to load image for:", project.title);
+                    }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background/90"></div>
                   <div className="absolute bottom-4 left-4 flex flex-wrap gap-2">
@@ -156,10 +165,10 @@ const Projects = () => {
                   <p className="text-muted-foreground text-sm">{project.description}</p>
                 </CardContent>
                 <CardFooter className="p-6 pt-0 flex gap-3">
-                  <Button variant="outline" asChild size="sm" className="w-full">
+                  <Button variant="outline" asChild size="sm" className="w-full" disabled={!project.demo_url}>
                     <a href={project.demo_url ?? "#"} target="_blank" rel="noreferrer">Live Demo</a>
                   </Button>
-                  <Button variant="ghost" asChild size="sm" className="w-full">
+                  <Button variant="ghost" asChild size="sm" className="w-full" disabled={!project.github_url}>
                     <a href={project.github_url ?? "#"} target="_blank" rel="noreferrer">Source Code</a>
                   </Button>
                 </CardFooter>

@@ -1,0 +1,49 @@
+/* Base state for animations */
+.animate-on-scroll {
+  opacity: 1; /* Changed from 0 to 1 to ensure visibility */
+  transform: translateY(0); /* Changed from 20px to 0 to prevent hiding elements */
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+/* Triggered state when element is visible */
+.animate-on-scroll.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Override for elements that need to be visible by default */
+.force-visible {
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: none !important;
+}
+
+/* Fix for tab panels and card visibility */
+[role="tabpanel"],
+.card,
+[data-state="active"] {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Fix for Radix UI Tabs */
+[data-radix-tabs-content] {
+  display: block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Only hide inactive tabs when appropriate */
+[data-state="inactive"] {
+  display: none;
+}
+
+/* Additional fixes for card visibility */
+.card, 
+.card *, 
+.badge,
+.grid,
+.grid > * {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
