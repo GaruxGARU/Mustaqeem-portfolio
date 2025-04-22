@@ -14,7 +14,7 @@ const HeroSection = () => {
             <span className="text-sm font-medium text-muted-foreground">Full-Stack Developer</span>
           </div>
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
-            Hi, I'm <span className="gradient-text">DevByte</span>.
+            Hi, I'm <span className="gradient-text">Mustaqeem</span>.
             <br />
             I build things <br />
             for the web.

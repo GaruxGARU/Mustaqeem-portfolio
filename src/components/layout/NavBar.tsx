@@ -44,10 +44,10 @@ const NavBar = () => {
           <div className="relative h-8 w-8">
             <div className="absolute inset-0 bg-primary rounded-full animate-pulse opacity-70"></div>
             <div className="absolute inset-1 bg-background rounded-full flex items-center justify-center">
-              <span className="font-bold text-lg text-primary">DB</span>
+              <span className="font-bold text-lg text-primary">GG</span>
             </div>
           </div>
-          <span className="font-bold text-xl tracking-tight">DevBytePortfolio</span>
+          <span className="font-bold text-xl tracking-tight">GARUXGARU</span>
         </Link>
 
         {/* Desktop Navigation */}
