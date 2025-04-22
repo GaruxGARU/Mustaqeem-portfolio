@@ -1,13 +1,19 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import Layout from '@/components/layout/Layout';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import EditProfileDialog from '@/components/dashboard/EditProfileDialog';
+import ManageProjectsDialog from '@/components/dashboard/ManageProjectsDialog';
+import ManageSkillsDialog from '@/components/dashboard/ManageSkillsDialog';
 
 const Dashboard = () => {
   const { user, loading, signOut } = useAuth();
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [isManageProjectsOpen, setIsManageProjectsOpen] = useState(false);
+  const [isManageSkillsOpen, setIsManageSkillsOpen] = useState(false);
 
   // Redirect to login if not authenticated
   if (!loading && !user) {
@@ -33,7 +39,13 @@ const Dashboard = () => {
               </CardHeader>
               <CardContent>
                 <p className="mb-4">Email: {user?.email}</p>
-                <Button variant="outline" className="w-full">Edit Profile</Button>
+                <Button 
+                  variant="outline" 
+                  className="w-full" 
+                  onClick={() => setIsEditProfileOpen(true)}
+                >
+                  Edit Profile
+                </Button>
               </CardContent>
             </Card>
             
@@ -44,7 +56,13 @@ const Dashboard = () => {
               </CardHeader>
               <CardContent>
                 <p className="mb-4">Manage, edit and create new projects to showcase</p>
-                <Button variant="outline" className="w-full">Manage Projects</Button>
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => setIsManageProjectsOpen(true)}
+                >
+                  Manage Projects
+                </Button>
               </CardContent>
             </Card>
             
@@ -55,11 +73,33 @@ const Dashboard = () => {
               </CardHeader>
               <CardContent>
                 <p className="mb-4">Update your skills and proficiency levels</p>
-                <Button variant="outline" className="w-full">Manage Skills</Button>
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => setIsManageSkillsOpen(true)}
+                >
+                  Manage Skills
+                </Button>
               </CardContent>
             </Card>
           </div>
         )}
+
+        {/* Dialogs */}
+        <EditProfileDialog 
+          open={isEditProfileOpen} 
+          onOpenChange={setIsEditProfileOpen} 
+        />
+        
+        <ManageProjectsDialog 
+          open={isManageProjectsOpen} 
+          onOpenChange={setIsManageProjectsOpen} 
+        />
+        
+        <ManageSkillsDialog 
+          open={isManageSkillsOpen} 
+          onOpenChange={setIsManageSkillsOpen} 
+        />
       </div>
     </Layout>
   );
