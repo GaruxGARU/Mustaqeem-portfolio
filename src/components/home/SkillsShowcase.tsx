@@ -1,33 +1,80 @@
-
-import React from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/integrations/supabase/client';
 
-interface SkillCategory {
+interface Skill {
+  id: string;
   name: string;
-  skills: string[];
+  category: string;
+  proficiency: number;
+  description: string | null;
+  projects: number | null;
+  years: number | null;
 }
 
-const skills: SkillCategory[] = [
-  {
-    name: "Frontend",
-    skills: ["React", "Next.js", "TypeScript", "JavaScript", "HTML", "CSS", "Tailwind CSS", "Material UI"]
-  },
-  {
-    name: "Backend",
-    skills: ["Node.js", "Express", "NestJS", "Python", "Django", "FastAPI", "GraphQL"]
-  },
-  {
-    name: "Database",
-    skills: ["PostgreSQL", "MongoDB", "MySQL", "Redis", "Prisma", "Supabase"]
-  },
-  {
-    name: "DevOps & Tools",
-    skills: ["Docker", "AWS", "CI/CD", "Git", "GitHub Actions", "Vercel", "Netlify"]
-  }
-];
+interface SkillCategory {
+  id: string;
+  name: string;
+  skills: Skill[];
+}
 
 const SkillsShowcase = () => {
+  const [skills, setSkills] = useState<Skill[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchSkills = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const { data, error } = await supabase
+          .from('skills')
+          .select('id, name, category, proficiency')
+          .order('category', { ascending: true })
+          .order('proficiency', { ascending: false });
+
+        if (error) {
+          throw new Error(error.message);
+        }
+        
+        setSkills(data as Skill[]);
+      } catch (err) {
+        console.error("Error fetching skills:", err);
+        setError('Failed to load skills.');
+        setSkills([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSkills();
+  }, []);
+
+  // Group skills by category
+  const skillCategories = useMemo(() => {
+    const groups: Record<string, Skill[]> = {};
+    
+    skills.forEach(skill => {
+      if (!skill.category) {
+        return;
+      }
+      
+      if (!groups[skill.category]) {
+        groups[skill.category] = [];
+      }
+      
+      groups[skill.category].push(skill);
+    });
+    
+    return Object.entries(groups).map(([id, catSkills]) => ({
+      id,
+      name: id,
+      skills: catSkills,
+    }));
+  }, [skills]);
+
   return (
     <section className="py-20 bg-secondary/10">
       <div className="container">
@@ -39,30 +86,38 @@ const SkillsShowcase = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {skills.map((category, index) => (
-            <Card key={category.name} className="animate-on-scroll bg-secondary/20 border border-secondary overflow-hidden">
-              <CardContent className="p-6">
-                <h3 className="text-xl font-semibold mb-4 flex items-center">
-                  <div className="h-2 w-2 bg-primary rounded-full mr-2"></div>
-                  {category.name}
-                </h3>
-                
-                <div className="flex flex-wrap gap-2">
-                  {category.skills.map((skill) => (
-                    <Badge 
-                      key={skill} 
-                      variant="outline"
-                      className="bg-background hover:bg-secondary transition-colors px-3 py-1 text-sm"
-                    >
-                      {skill}
-                    </Badge>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        {loading ? (
+          <div className="flex justify-center py-12 text-lg">Loading skills...</div>
+        ) : error ? (
+          <div className="flex justify-center py-12 text-destructive">{error}</div>
+        ) : skillCategories.length === 0 ? (
+          <div className="flex justify-center py-12 text-muted-foreground">No skills found.</div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {skillCategories.map((category) => (
+              <Card key={category.id} className="animate-on-scroll bg-secondary/20 border border-secondary overflow-hidden">
+                <CardContent className="p-6">
+                  <h3 className="text-xl font-semibold mb-4 flex items-center">
+                    <div className="h-2 w-2 bg-primary rounded-full mr-2"></div>
+                    {category.name}
+                  </h3>
+                  
+                  <div className="flex flex-wrap gap-2">
+                    {category.skills.map((skill) => (
+                      <Badge 
+                        key={skill.id} 
+                        variant="outline"
+                        className="bg-background hover:bg-secondary transition-colors px-3 py-1 text-sm"
+                      >
+                        {skill.name}
+                      </Badge>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
         
         <div className="flex justify-center mt-12">
           <a href="/skills" className="group inline-flex items-center text-primary hover:text-primary/80 transition-colors">
