@@ -111,6 +111,60 @@ export type Database = {
         }
         Relationships: []
       }
+      work_experience: {
+        Row: {
+          company_name: string
+          created_at: string
+          current: boolean
+          description: string | null
+          end_date: string | null
+          id: string
+          location: string | null
+          organization: string | null
+          period: string | null
+          position: string
+          start_date: string
+          tags: string[] | null
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company_name: string
+          created_at?: string
+          current?: boolean
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          location?: string | null
+          organization?: string | null
+          period?: string | null
+          position: string
+          start_date: string
+          tags?: string[] | null
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company_name?: string
+          created_at?: string
+          current?: boolean
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          location?: string | null
+          organization?: string | null
+          period?: string | null
+          position?: string
+          start_date?: string
+          tags?: string[] | null
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
