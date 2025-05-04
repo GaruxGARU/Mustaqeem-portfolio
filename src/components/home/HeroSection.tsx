@@ -99,10 +99,9 @@ const HeroSection = () => {
             Hi, I'm <span className="gradient-text">{displayName}</span>.
             <br />
             {profileHeadline.split('\n').map((line, i) => (
-              <React.Fragment key={i}>
+              <span key={i} className="block">
                 {line}
-                {i < profileHeadline.split('\n').length - 1 && <br />}
-              </React.Fragment>
+              </span>
             ))}
           </h1>
           <p className="text-lg text-muted-foreground max-w-md">

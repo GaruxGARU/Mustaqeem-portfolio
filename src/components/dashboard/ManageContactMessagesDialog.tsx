@@ -185,11 +185,11 @@ const ManageContactMessagesDialog = ({ open, onOpenChange }: ManageContactMessag
                       
                       <div className="flex gap-2">
                         <Button 
-                          variant="outline" 
+                          variant={message.read ? "outline" : "secondary"}
                           size="sm" 
                           onClick={() => toggleReadStatus(message.id, message.read)}
                         >
-                          Mark as {message.read ? 'Unread' : 'Read'}
+                          {message.read ? 'Mark as Unread' : 'Mark as Read'}
                         </Button>
                         <Button 
                           variant="destructive" 
