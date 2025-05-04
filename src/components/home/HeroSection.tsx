@@ -4,38 +4,62 @@ import { Button } from '@/components/ui/button';
 import { ArrowRight, Code, Github } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
+interface PersonalInfo {
+  github: string | null;
+}
+
 const HeroSection = () => {
   const [profileName, setProfileName] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [personalInfo, setPersonalInfo] = useState<PersonalInfo>({ github: null });
 
-  // Fetch the profile name from database
+  // Fetch the profile name and personal info from database
   useEffect(() => {
-    const fetchProfileName = async () => {
+    const fetchData = async () => {
       setIsLoading(true);
       try {
-        const { data, error } = await supabase
+        // Fetch profile name
+        const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('name')
           .single();
         
-        if (error && error.code !== 'PGRST116') {
-          console.error("Error fetching profile name:", error);
-          setIsLoading(false);
-          return;
+        if (profileError && profileError.code !== 'PGRST116') {
+          console.error("Error fetching profile name:", profileError);
+        } else if (profileData?.name) {
+          setProfileName(profileData.name);
         }
 
-        if (data?.name) {
-          setProfileName(data.name);
+        // Fetch personal info (github)
+        const { data: personalInfoData, error: personalInfoError } = await supabase
+          .from('personal_info')
+          .select('github')
+          .single();
+        
+        if (personalInfoError && personalInfoError.code !== 'PGRST116') {
+          console.error("Error fetching personal info:", personalInfoError);
+        } else if (personalInfoData) {
+          setPersonalInfo({
+            github: personalInfoData.github
+          });
         }
       } catch (error) {
-        console.error("Error in profile name fetch:", error);
+        console.error("Error fetching data:", error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchProfileName();
+    fetchData();
   }, []);
+
+  // Format GitHub URL if it doesn't start with http:// or https://
+  const getGithubUrl = () => {
+    if (!personalInfo.github) return "https://github.com";
+    return personalInfo.github.startsWith('http') ? 
+      personalInfo.github : 
+      `https://github.com/${personalInfo.github}`;
+  };
 
   // Get display name - show blank while loading
   const displayName = isLoading ? '' : profileName;
@@ -64,7 +88,7 @@ const HeroSection = () => {
                 <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Button>
             </Link>
-            <a href="https://github.com/GaruxGARU" target="_blank" rel="noreferrer">
+            <a href={getGithubUrl()} target="_blank" rel="noreferrer">
               <Button size="lg" variant="outline" className="group">
                 <Github className="mr-1 h-4 w-4" />
                 GitHub Profile

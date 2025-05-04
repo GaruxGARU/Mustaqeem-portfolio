@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
+import { Link } from 'react-router-dom';
 
 interface Skill {
   id: string;
@@ -130,12 +131,12 @@ const SkillsShowcase = () => {
         )}
         
         <div className="flex justify-center mt-12">
-          <a href="/skills" className="group inline-flex items-center text-primary hover:text-primary/80 transition-colors">
+          <Link to="/skills" className="group inline-flex items-center text-primary hover:text-primary/80 transition-colors">
             <span>View detailed skills & experience</span>
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
             </svg>
-          </a>
+          </Link>
         </div>
       </div>
     </section>

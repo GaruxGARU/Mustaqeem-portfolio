@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -7,6 +6,15 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+
+interface PersonalInfo {
+  email: string | null;
+  phone: string | null;
+  location: string | null;
+  github: string | null;
+  linkedin: string | null;
+}
 
 const Contact = () => {
   const [name, setName] = useState('');
@@ -14,8 +22,61 @@ const Contact = () => {
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [personalInfo, setPersonalInfo] = useState<PersonalInfo>({
+    email: null,
+    phone: null,
+    location: null,
+    github: null,
+    linkedin: null
+  });
+  const [infoLoading, setInfoLoading] = useState(true);
   
   const { toast } = useToast();
+  
+  useEffect(() => {
+    const fetchPersonalInfo = async () => {
+      setInfoLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('personal_info')
+          .select('email, phone, location, github, linkedin')
+          .single();
+        
+        if (error && error.code !== 'PGRST116') {
+          console.error("Error fetching personal info:", error);
+        } else if (data) {
+          setPersonalInfo({
+            email: data.email,
+            phone: data.phone,
+            location: data.location,
+            github: data.github,
+            linkedin: data.linkedin
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching personal info:", error);
+      } finally {
+        setInfoLoading(false);
+      }
+    };
+
+    fetchPersonalInfo();
+  }, []);
+
+  // Format URLs if they don't start with http:// or https://
+  const getGithubUrl = () => {
+    if (!personalInfo.github) return "https://github.com";
+    return personalInfo.github.startsWith('http') ? 
+      personalInfo.github : 
+      `https://github.com/${personalInfo.github}`;
+  };
+
+  const getLinkedinUrl = () => {
+    if (!personalInfo.linkedin) return "https://linkedin.com";
+    return personalInfo.linkedin.startsWith('http') ? 
+      personalInfo.linkedin : 
+      `https://linkedin.com/in/${personalInfo.linkedin}`;
+  };
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -125,42 +186,44 @@ const Contact = () => {
               <CardContent className="space-y-6">
                 <div className="flex flex-col space-y-2">
                   <span className="text-lg font-medium">Email</span>
-                  <a href="mailto:contact@example.com" className="text-primary hover:underline">
-                    contact@example.com
+                  <a href={`mailto:${personalInfo.email || 'contact@example.com'}`} className="text-primary hover:underline">
+                    {personalInfo.email || 'contact@example.com'}
                   </a>
                 </div>
                 
                 <div className="flex flex-col space-y-2">
                   <span className="text-lg font-medium">Phone</span>
-                  <a href="tel:+1234567890" className="text-primary hover:underline">
-                    +1 (234) 567-890
+                  <a href={`tel:${personalInfo.phone || '+1234567890'}`} className="text-primary hover:underline">
+                    {personalInfo.phone || '+1 (234) 567-890'}
                   </a>
                 </div>
                 
                 <div className="flex flex-col space-y-2">
                   <span className="text-lg font-medium">Location</span>
-                  <span>San Francisco, CA</span>
+                  <span>{personalInfo.location || 'San Francisco, CA'}</span>
                 </div>
                 
                 <div className="flex flex-col space-y-2">
                   <span className="text-lg font-medium">Social Media</span>
                   <div className="flex gap-4">
-                    <a href="https://github.com" target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0012 2z" />
-                      </svg>
-                    </a>
-                    <a href="https://twitter.com" target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path d="M22 4.01c-1 .49-1.98.689-3 .99-1.121-1.265-2.783-1.335-4.38-.737S11.977 6.323 12 8v1c-3.245.083-6.135-1.395-8-4 0 0-4.182 7.433 4 11-1.872 1.247-3.739 2.088-6 2 3.308 1.803 6.913 2.423 10.034 1.517 3.58-1.04 6.522-3.723 7.651-7.742a13.84 13.84 0 0 0 .497-3.753C20.18 7.773 21.692 5.25 22 4.009z" />
-                      </svg>
-                    </a>
-                    <a href="https://linkedin.com" target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z" />
-                        <circle cx="4" cy="4" r="2" />
-                      </svg>
-                    </a>
+                    {personalInfo.github && (
+                      <a href={getGithubUrl()} target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0012 2z" />
+                        </svg>
+                      </a>
+                    )}
+                    {personalInfo.linkedin && (
+                      <a href={getLinkedinUrl()} target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z" />
+                          <circle cx="4" cy="4" r="2" />
+                        </svg>
+                      </a>
+                    )}
+                    {!personalInfo.github && !personalInfo.linkedin && (
+                      <span className="text-sm text-muted-foreground">No social media links available</span>
+                    )}
                   </div>
                 </div>
               </CardContent>
