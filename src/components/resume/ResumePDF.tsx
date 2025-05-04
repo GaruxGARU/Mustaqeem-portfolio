@@ -38,14 +38,14 @@ const styles = StyleSheet.create({
     lineHeight: 1.4,
   },
   header: {
-    marginBottom: 10,
+    marginBottom: 1,
     textAlign: 'center',
   },
   name: {
     fontSize: 22,
     fontWeight: 700,
     color: '#3563cb',
-    marginBottom: 8, // Increased margin to create more separation
+    marginBottom: 14, // Increased margin to create more separation
   },
   contactInfo: {
     flexDirection: 'row',
@@ -124,6 +124,15 @@ const styles = StyleSheet.create({
   experienceItem: {
     marginBottom: 12,
   },
+  experienceHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 2,
+  },
+  experienceDetails: {
+    flex: 1,
+  },
   jobTitle: {
     fontSize: 11,
     fontWeight: 700,
@@ -133,15 +142,20 @@ const styles = StyleSheet.create({
     color: '#3563cb',
     marginBottom: 2,
   },
+  rightDetails: {
+    alignItems: 'flex-end',
+  },
   period: {
     fontSize: 9,
     color: '#666',
     marginBottom: 2,
+    textAlign: 'right',
   },
   location: {
     fontSize: 9,
     color: '#666',
     marginBottom: 2,
+    textAlign: 'right',
   },
   description: {
     fontSize: 9,
@@ -304,14 +318,20 @@ const ResumePDF: React.FC<ResumePDFProps> = ({
               <Text style={styles.sectionTitle}>Work Experience</Text>
               {workExperience.map((work) => (
                 <View key={work.id} style={styles.experienceItem}>
-                  <Text style={styles.jobTitle}>{work.position || work.title}</Text>
-                  <Text style={styles.companyName}>{work.company_name}</Text>
-                  <Text style={styles.period}>
-                    {formatDate(work.start_date)} - {work.current ? 'Present' : formatDate(work.end_date)}
-                  </Text>
-                  {work.location && (
-                    <Text style={styles.location}>{work.location}</Text>
-                  )}
+                  <View style={styles.experienceHeader}>
+                    <View style={styles.experienceDetails}>
+                      <Text style={styles.jobTitle}>{work.position || work.title}</Text>
+                      <Text style={styles.companyName}>{work.company_name}</Text>
+                    </View>
+                    <View style={styles.rightDetails}>
+                      <Text style={styles.period}>
+                        {formatDate(work.start_date)} - {work.current ? 'Present' : formatDate(work.end_date)}
+                      </Text>
+                      {work.location && (
+                        <Text style={styles.location}>{work.location}</Text>
+                      )}
+                    </View>
+                  </View>
                   <Text style={styles.description}>{work.description}</Text>
                   
                   {work.tags && work.tags.length > 0 && (
@@ -335,14 +355,20 @@ const ResumePDF: React.FC<ResumePDFProps> = ({
               <Text style={styles.sectionTitle}>Education</Text>
               {education.map((edu) => (
                 <View key={edu.id} style={styles.experienceItem}>
-                  <Text style={styles.degreeTitle}>{edu.title}</Text>
-                  <Text style={styles.university}>{edu.organization}</Text>
-                  <Text style={styles.period}>
-                    {formatDate(edu.start_date)} - {edu.current ? 'Present' : formatDate(edu.end_date)}
-                  </Text>
-                  {edu.location && (
-                    <Text style={styles.location}>{edu.location}</Text>
-                  )}
+                  <View style={styles.experienceHeader}>
+                    <View style={styles.experienceDetails}>
+                      <Text style={styles.degreeTitle}>{edu.title}</Text>
+                      <Text style={styles.university}>{edu.organization}</Text>
+                    </View>
+                    <View style={styles.rightDetails}>
+                      <Text style={styles.period}>
+                        {formatDate(edu.start_date)} - {edu.current ? 'Present' : formatDate(edu.end_date)}
+                      </Text>
+                      {edu.location && (
+                        <Text style={styles.location}>{edu.location}</Text>
+                      )}
+                    </View>
+                  </View>
                   <Text style={styles.description}>{edu.description}</Text>
                   
                   {edu.tags && edu.tags.length > 0 && (
