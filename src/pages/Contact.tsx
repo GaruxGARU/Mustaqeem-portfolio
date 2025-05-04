@@ -78,22 +78,50 @@ const Contact = () => {
       `https://linkedin.com/in/${personalInfo.linkedin}`;
   };
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      // Submit message to contact_messages table
+      const { data, error } = await supabase
+        .from('contact_messages')
+        .insert([
+          {
+            name,
+            email,
+            subject,
+            message
+          }
+        ]);
+      
+      if (error) {
+        console.error("Error submitting message:", error);
+        toast({
+          title: "Error",
+          description: "There was a problem sending your message. Please try again.",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Message sent!",
+          description: "Thank you for your message. I'll get back to you soon."
+        });
+        setName('');
+        setEmail('');
+        setSubject('');
+        setMessage('');
+      }
+    } catch (error) {
+      console.error("Error submitting message:", error);
       toast({
-        title: "Message sent!",
-        description: "Thank you for your message. I'll get back to you soon.",
+        title: "Error",
+        description: "There was a problem sending your message. Please try again.",
+        variant: "destructive"
       });
-      setName('');
-      setEmail('');
-      setSubject('');
-      setMessage('');
-    }, 1500);
+    } finally {
+      setIsLoading(false);
+    }
   };
   
   return (
