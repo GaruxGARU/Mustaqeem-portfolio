@@ -12,12 +12,18 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
+interface PersonalInfo {
+  github: string | null;
+  linkedin: string | null;
+}
+
 const NavBar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, signOut } = useAuth();
   const [profileName, setProfileName] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [personalInfo, setPersonalInfo] = useState<PersonalInfo>({ github: null, linkedin: null });
 
   useEffect(() => {
     const handleScroll = () => {
@@ -34,34 +40,61 @@ const NavBar = () => {
     };
   }, []);
 
-  // Fetch the profile name from database
+  // Fetch the profile name and personal info from database
   useEffect(() => {
-    const fetchProfileName = async () => {
+    const fetchProfileData = async () => {
       setIsLoading(true);
       try {
-        const { data, error } = await supabase
+        // Fetch profile name
+        const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('name')
           .single();
         
-        if (error && error.code !== 'PGRST116') {
-          console.error("Error fetching profile name:", error);
-          setIsLoading(false);
-          return;
+        if (profileError && profileError.code !== 'PGRST116') {
+          console.error("Error fetching profile name:", profileError);
+        } else if (profileData?.name) {
+          setProfileName(profileData.name);
         }
 
-        if (data?.name) {
-          setProfileName(data.name);
+        // Fetch personal info (github, linkedin)
+        const { data: personalInfoData, error: personalInfoError } = await supabase
+          .from('personal_info')
+          .select('github, linkedin')
+          .single();
+        
+        if (personalInfoError && personalInfoError.code !== 'PGRST116') {
+          console.error("Error fetching personal info:", personalInfoError);
+        } else if (personalInfoData) {
+          setPersonalInfo({
+            github: personalInfoData.github,
+            linkedin: personalInfoData.linkedin
+          });
         }
       } catch (error) {
-        console.error("Error in profile name fetch:", error);
+        console.error("Error fetching data:", error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchProfileName();
+    fetchProfileData();
   }, [user]);
+
+  // Format URLs if they don't start with http:// or https://
+  const getGithubUrl = () => {
+    if (!personalInfo.github) return "https://github.com";
+    return personalInfo.github.startsWith('http') ? 
+      personalInfo.github : 
+      `https://github.com/${personalInfo.github}`;
+  };
+
+  const getLinkedinUrl = () => {
+    if (!personalInfo.linkedin) return "https://linkedin.com";
+    return personalInfo.linkedin.startsWith('http') ? 
+      personalInfo.linkedin : 
+      `https://linkedin.com/in/${personalInfo.linkedin}`;
+  };
 
   // Get display name - show blank while loading
   const displayName = isLoading ? '' : profileName;
@@ -108,11 +141,11 @@ const NavBar = () => {
           ))}
 
           <div className="flex items-center gap-3 ml-4">
-            <a href="https://github.com" target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">
+            <a href={getGithubUrl()} target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">
               <Github size={20} />
               <span className="sr-only">GitHub</span>
             </a>
-            <a href="https://linkedin.com" target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">
+            <a href={getLinkedinUrl()} target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">
               <Linkedin size={20} />
               <span className="sr-only">LinkedIn</span>
             </a>
@@ -167,6 +200,18 @@ const NavBar = () => {
                 {item.name}
               </Link>
             ))}
+            
+            <div className="flex gap-6 my-4">
+              <a href={getGithubUrl()} target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">
+                <Github size={24} />
+                <span className="sr-only">GitHub</span>
+              </a>
+              <a href={getLinkedinUrl()} target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">
+                <Linkedin size={24} />
+                <span className="sr-only">LinkedIn</span>
+              </a>
+            </div>
+            
             {user ? (
               <>
                 <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)} className="text-lg font-medium hover:text-primary transition-colors">

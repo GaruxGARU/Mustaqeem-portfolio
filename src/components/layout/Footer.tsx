@@ -2,38 +2,81 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 
+interface PersonalInfo {
+  email: string | null;
+  phone: string | null;
+  github: string | null;
+  linkedin: string | null;
+}
+
 const Footer = () => {
   const [profileName, setProfileName] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [personalInfo, setPersonalInfo] = useState<PersonalInfo>({
+    email: null,
+    phone: null,
+    github: null,
+    linkedin: null
+  });
 
-  // Fetch the profile name from database
+  // Fetch the profile name and personal info from database
   useEffect(() => {
-    const fetchProfileName = async () => {
+    const fetchData = async () => {
       setIsLoading(true);
       try {
-        const { data, error } = await supabase
+        // Fetch profile name
+        const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('name')
           .single();
         
-        if (error && error.code !== 'PGRST116') {
-          console.error("Error fetching profile name:", error);
-          setIsLoading(false);
-          return;
+        if (profileError && profileError.code !== 'PGRST116') {
+          console.error("Error fetching profile name:", profileError);
+        } else if (profileData?.name) {
+          setProfileName(profileData.name);
         }
 
-        if (data?.name) {
-          setProfileName(data.name);
+        // Fetch personal info using "any" to bypass type checking
+        const { data: personalInfoData, error: personalInfoError } = await supabase
+          .from('personal_info' as any)
+          .select('email, phone, github, linkedin' as any)
+          .single();
+        
+        if (personalInfoError && personalInfoError.code !== 'PGRST116') {
+          console.error("Error fetching personal info:", personalInfoError);
+        } else if (personalInfoData) {
+          // Cast the data to our interface
+          setPersonalInfo({
+            email: personalInfoData.email || null,
+            phone: personalInfoData.phone || null,
+            github: personalInfoData.github || null,
+            linkedin: personalInfoData.linkedin || null
+          });
         }
       } catch (error) {
-        console.error("Error in profile name fetch:", error);
+        console.error("Error in data fetch:", error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchProfileName();
+    fetchData();
   }, []);
+
+  // Format URLs if they don't start with http:// or https://
+  const getGithubUrl = () => {
+    if (!personalInfo.github) return null;
+    return personalInfo.github.startsWith('http') ? 
+      personalInfo.github : 
+      `https://github.com/${personalInfo.github}`;
+  };
+
+  const getLinkedinUrl = () => {
+    if (!personalInfo.linkedin) return null;
+    return personalInfo.linkedin.startsWith('http') ? 
+      personalInfo.linkedin : 
+      `https://linkedin.com/in/${personalInfo.linkedin}`;
+  };
 
   // Get display name - show blank while loading
   const displayName = isLoading ? '' : profileName;
@@ -58,22 +101,21 @@ const Footer = () => {
             A modern, dark-themed developer portfolio showcasing projects, skills, and experience with a touch of interactivity.
           </p>
           <div className="flex gap-4 mt-4">
-            <a href="https://github.com" target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0012 2z" />
-              </svg>
-            </a>
-            <a href="https://twitter.com" target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path d="M22 4.01c-1 .49-1.98.689-3 .99-1.121-1.265-2.783-1.335-4.38-.737S11.977 6.323 12 8v1c-3.245.083-6.135-1.395-8-4 0 0-4.182 7.433 4 11-1.872 1.247-3.739 2.088-6 2 3.308 1.803 6.913 2.423 10.034 1.517 3.58-1.04 6.522-3.723 7.651-7.742a13.84 13.84 0 0 0 .497-3.753C20.18 7.773 21.692 5.25 22 4.009z" />
-              </svg>
-            </a>
-            <a href="https://linkedin.com" target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z" />
-                <circle cx="4" cy="4" r="2" />
-              </svg>
-            </a>
+            {personalInfo.github && (
+              <a href={getGithubUrl() || "#"} target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0012 2z" />
+                </svg>
+              </a>
+            )}
+            {personalInfo.linkedin && (
+              <a href={getLinkedinUrl() || "#"} target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z" />
+                  <circle cx="4" cy="4" r="2" />
+                </svg>
+              </a>
+            )}
           </div>
         </div>
         <div className="flex flex-col">
@@ -90,8 +132,15 @@ const Footer = () => {
         <div className="flex flex-col">
           <h3 className="text-base font-semibold mb-4">Contact</h3>
           <p className="text-sm text-muted-foreground mb-2">Feel free to reach out if you have any questions or want to work together.</p>
-          <a href="mailto:contact@example.com" className="text-sm text-primary hover:underline">contact@example.com</a>
-          <a href="tel:+1234567890" className="text-sm text-primary hover:underline mt-1">+1 (234) 567-890</a>
+          {personalInfo.email && (
+            <a href={`mailto:${personalInfo.email}`} className="text-sm text-primary hover:underline">{personalInfo.email}</a>
+          )}
+          {personalInfo.phone && (
+            <a href={`tel:${personalInfo.phone}`} className="text-sm text-primary hover:underline mt-1">{personalInfo.phone}</a>
+          )}
+          {!personalInfo.email && !personalInfo.phone && (
+            <p className="text-sm text-muted-foreground">Contact information not available</p>
+          )}
         </div>
       </div>
       <div className="container mt-8 pt-4 border-t border-muted">
