@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS public.personal_info (
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
     email TEXT,
     phone TEXT,
+    whatsapp TEXT,
     location TEXT,
     github TEXT,
     linkedin TEXT,

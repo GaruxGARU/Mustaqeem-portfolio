@@ -8,8 +8,18 @@ interface PersonalInfo {
   github: string | null;
 }
 
+interface ProfileData {
+  name: string | null;
+  bio: string | null;
+  headline: string | null;
+  description: string | null;
+}
+
 const HeroSection = () => {
   const [profileName, setProfileName] = useState('');
+  const [profileBio, setProfileBio] = useState(''); // Default value
+  const [profileHeadline, setProfileHeadline] = useState('');
+  const [profileDescription, setProfileDescription] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [personalInfo, setPersonalInfo] = useState<PersonalInfo>({ github: null });
 
@@ -18,16 +28,29 @@ const HeroSection = () => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        // Fetch profile name
+        // Fetch profile data
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
-          .select('name')
+          .select('name, bio, headline, description')
           .single();
         
         if (profileError && profileError.code !== 'PGRST116') {
-          console.error("Error fetching profile name:", profileError);
-        } else if (profileData?.name) {
-          setProfileName(profileData.name);
+          console.error("Error fetching profile data:", profileError);
+        } else if (profileData) {
+          setProfileName(profileData.name || '');
+          
+          // Only update if values exist and aren't empty
+          if (profileData.bio && profileData.bio.trim() !== '') {
+            setProfileBio(profileData.bio);
+          }
+          
+          if (profileData.headline && profileData.headline.trim() !== '') {
+            setProfileHeadline(profileData.headline);
+          }
+          
+          if (profileData.description && profileData.description.trim() !== '') {
+            setProfileDescription(profileData.description);
+          }
         }
 
         // Fetch personal info (github)
@@ -70,16 +93,20 @@ const HeroSection = () => {
         <div className="flex flex-col space-y-6 animate-fadeIn">
           <div className="flex items-center gap-2">
             <div className="h-1.5 w-12 bg-primary rounded-full"></div>
-            <span className="text-sm font-medium text-muted-foreground">Full-Stack Developer</span>
+            <span className="text-sm font-medium text-muted-foreground">{profileBio}</span>
           </div>
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
             Hi, I'm <span className="gradient-text">{displayName}</span>.
             <br />
-            I build things <br />
-            for the web.
+            {profileHeadline.split('\n').map((line, i) => (
+              <React.Fragment key={i}>
+                {line}
+                {i < profileHeadline.split('\n').length - 1 && <br />}
+              </React.Fragment>
+            ))}
           </h1>
           <p className="text-lg text-muted-foreground max-w-md">
-            A passionate developer focused on creating interactive, accessible, and responsive web applications.
+            {profileDescription}
           </p>
           <div className="flex flex-wrap gap-4">
             <Link to="/projects">
