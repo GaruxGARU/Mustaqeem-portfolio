@@ -22,7 +22,9 @@ const Contact = () => {
   const [email, setEmail] = useState('');
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
+  const [whatsapp, setWhatsapp] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [emailOrWhatsappError, setEmailOrWhatsappError] = useState('');
   const [personalInfo, setPersonalInfo] = useState<PersonalInfo>({
     email: null,
     phone: null,
@@ -81,26 +83,23 @@ const Contact = () => {
       `https://linkedin.com/in/${personalInfo.linkedin}`;
   };
 
-  // Send message via WhatsApp
-  const sendWhatsAppMessage = (whatsappNumber: string, formData: { name: string; email: string; subject: string; message: string }) => {
-    // Format the WhatsApp message
-    const whatsappMessage = `🔔 New contact form submission:\n\n👤 *${formData.name}*\n📧 ${formData.email}\n📝 *${formData.subject}*\n\n${formData.message}`;
-    
-    // Encode the message for URL
-    const encodedMessage = encodeURIComponent(whatsappMessage);
-    
-    // Format number to ensure it's valid (remove spaces, +, etc if needed)
-    const formattedNumber = whatsappNumber.replace(/\D/g, "");
-    
-    // Create WhatsApp API URL
-    const whatsappUrl = `https://api.whatsapp.com/send?phone=${formattedNumber}&text=${encodedMessage}`;
-    
-    // Open WhatsApp in a new tab/window
-    window.open(whatsappUrl, '_blank');
+  const validateContactInfo = () => {
+    if (!email && !whatsapp) {
+      setEmailOrWhatsappError('Please provide either an email or WhatsApp number');
+      return false;
+    }
+    setEmailOrWhatsappError('');
+    return true;
   };
-  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate that either email or WhatsApp is provided
+    if (!validateContactInfo()) {
+      return;
+    }
+    
     setIsLoading(true);
     
     try {
@@ -112,7 +111,8 @@ const Contact = () => {
             name,
             email,
             subject,
-            message
+            message,
+            whatsapp
           }
         ]);
       
@@ -128,24 +128,14 @@ const Contact = () => {
           title: "Message sent!",
           description: "Thank you for your message. I'll get back to you soon."
         });
-
-        // Send WhatsApp notification if a WhatsApp number is available
-        if (personalInfo.whatsapp) {
-          // Create a background timeout to not block the UI
-          setTimeout(() => {
-            sendWhatsAppMessage(personalInfo.whatsapp!, {
-              name,
-              email,
-              subject,
-              message
-            });
-          }, 500);
-        }
         
+        // Reset form fields after successful submission
         setName('');
         setEmail('');
         setSubject('');
         setMessage('');
+        setWhatsapp('');
+        setEmailOrWhatsappError('');
       }
     } catch (error) {
       console.error("Error submitting message:", error);
@@ -200,9 +190,21 @@ const Contact = () => {
                       placeholder="your@email.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      required
                     />
                   </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="whatsapp">WhatsApp</Label>
+                    <Input 
+                      id="whatsapp" 
+                      placeholder="Your WhatsApp number"
+                      value={whatsapp}
+                      onChange={(e) => setWhatsapp(e.target.value)}
+                    />
+                  </div>
+                  
+                  {emailOrWhatsappError && (
+                    <p className="text-red-500 text-sm">{emailOrWhatsappError}</p>
+                  )}
                   
                   <div className="space-y-2">
                     <Label htmlFor="subject">Subject</Label>
@@ -226,6 +228,7 @@ const Contact = () => {
                       required
                     />
                   </div>
+
                 </CardContent>
                 
                 <CardFooter>

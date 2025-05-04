@@ -5,9 +5,11 @@ import { useLocation } from 'react-router-dom';
 
 interface LayoutProps {
   children: React.ReactNode;
+  hideFooter?: boolean;
+  hideNavBar?: boolean;
 }
 
-const Layout = ({ children }: LayoutProps) => {
+const Layout = ({ children, hideFooter = false, hideNavBar = false }: LayoutProps) => {
   const location = useLocation();
 
   // Auto-scroll to top when route changes
@@ -54,11 +56,11 @@ const Layout = ({ children }: LayoutProps) => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <NavBar />
-      <main className="flex-1 pt-24 relative z-0">
+      {!hideNavBar && <NavBar />}
+      <main className={`flex-1 relative z-0 ${!hideNavBar ? 'pt-24' : ''}`}>
         {children}
       </main>
-      <Footer />
+      {!hideFooter && <Footer />}
     </div>
   );
 };
