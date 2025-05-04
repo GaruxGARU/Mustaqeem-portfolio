@@ -1,5 +1,5 @@
 import React from 'react';
-import { Document, Page, Text, View, StyleSheet, Font } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet, Font, Image } from '@react-pdf/renderer';
 
 interface ResumePDFProps {
   personalInfo: any;
@@ -40,12 +40,26 @@ const styles = StyleSheet.create({
   header: {
     marginBottom: 1,
     textAlign: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerContent: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  profileImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginRight: 15,
+    border: '1px solid #3563cb',
   },
   name: {
     fontSize: 22,
     fontWeight: 700,
     color: '#3563cb',
-    marginBottom: 14, // Increased margin to create more separation
+    marginBottom: 14,
   },
   contactInfo: {
     flexDirection: 'row',
@@ -209,6 +223,9 @@ const formatDate = (dateString: string | null) => {
   return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
 };
 
+// SVG profile placeholder as a data URL
+const PLACEHOLDER_IMAGE = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA4MCA4MCI+PGNpcmNsZSBjeD0iNDAiIGN5PSI0MCIgcj0iNDAiIGZpbGw9IiMzNTYzY2IiLz48cGF0aCBkPSJNNDAsMjAgQzM0LjUsMjAgMzAsMjQuNSAzMCwzMCBDMzAsMzUuNSAzNC41LDQwIDQwLDQwIEM0NS41LDQwIDUwLDM1LjUgNTAsMzAgQzUwLDI0LjUgNDUuNSwyMCA0MCwyMCBaTTIwLDYwIEMyMCw1MCAzMCw0NSA0MCw0NSBDNTAsNDUgNjAsNTAgNjAsNjAgWiIgZmlsbD0id2hpdGUiLz48L3N2Zz4=';
+
 // Process journey content to handle line breaks
 const processJourneyContent = (content: string) => {
   if (!content) return [];
@@ -235,13 +252,19 @@ const ResumePDF: React.FC<ResumePDFProps> = ({
       <Page size="A4" style={styles.page}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.name}>{personalInfo?.full_name || 'Full Name'}</Text>
-          
-          {/* Contact Info */}
-          <View style={styles.contactInfo}>
-            {personalInfo?.email && <Text style={styles.contactItem}>Email: {personalInfo.email}</Text>}
-            {personalInfo?.phone && <Text style={styles.contactItem}>Phone: {personalInfo.phone}</Text>}
-            {personalInfo?.location && <Text style={styles.contactItem}>Location: {personalInfo.location}</Text>}
+          <Image 
+            style={styles.profileImage} 
+            src={profile?.avatar_url || PLACEHOLDER_IMAGE} 
+          />
+          <View style={styles.headerContent}>
+            <Text style={styles.name}>{personalInfo?.full_name || 'Full Name'}</Text>
+            
+            {/* Contact Info */}
+            <View style={styles.contactInfo}>
+              {personalInfo?.email && <Text style={styles.contactItem}>Email: {personalInfo.email}</Text>}
+              {personalInfo?.phone && <Text style={styles.contactItem}>Phone: {personalInfo.phone}</Text>}
+              {personalInfo?.location && <Text style={styles.contactItem}>Location: {personalInfo.location}</Text>}
+            </View>
           </View>
         </View>
         
