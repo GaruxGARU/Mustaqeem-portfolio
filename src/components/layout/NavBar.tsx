@@ -1,10 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Menu, X, Github, Linkedin, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -16,6 +16,8 @@ const NavBar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, signOut } = useAuth();
+  const [profileName, setProfileName] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -31,6 +33,39 @@ const NavBar = () => {
       window.removeEventListener('scroll', handleScroll);
     };
   }, []);
+
+  // Fetch the profile name from database
+  useEffect(() => {
+    const fetchProfileName = async () => {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('name')
+          .single();
+        
+        if (error && error.code !== 'PGRST116') {
+          console.error("Error fetching profile name:", error);
+          setIsLoading(false);
+          return;
+        }
+
+        if (data?.name) {
+          setProfileName(data.name);
+        }
+      } catch (error) {
+        console.error("Error in profile name fetch:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProfileName();
+  }, [user]);
+
+  // Get display name - show blank while loading
+  const displayName = isLoading ? '' : profileName;
+  const displayInitials = isLoading ? '' : profileName.substring(0, 2).toUpperCase();
 
   const navItems = [
     { name: 'Home', path: '/' },
@@ -52,10 +87,12 @@ const NavBar = () => {
           <div className="relative h-8 w-8">
             <div className="absolute inset-0 bg-primary rounded-full animate-pulse opacity-70"></div>
             <div className="absolute inset-1 bg-background rounded-full flex items-center justify-center">
-              <span className="font-bold text-lg text-primary">GG</span>
+              <span className="font-bold text-lg text-primary">
+                {displayInitials}
+              </span>
             </div>
           </div>
-          <span className="font-bold text-xl tracking-tight">GARUXGARU</span>
+          <span className="font-bold text-xl tracking-tight">{displayName.toUpperCase()}</span>
         </Link>
 
         {/* Desktop Navigation */}

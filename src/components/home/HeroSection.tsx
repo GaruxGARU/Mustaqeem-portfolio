@@ -1,10 +1,45 @@
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Code, Github } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const HeroSection = () => {
+  const [profileName, setProfileName] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch the profile name from database
+  useEffect(() => {
+    const fetchProfileName = async () => {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('name')
+          .single();
+        
+        if (error && error.code !== 'PGRST116') {
+          console.error("Error fetching profile name:", error);
+          setIsLoading(false);
+          return;
+        }
+
+        if (data?.name) {
+          setProfileName(data.name);
+        }
+      } catch (error) {
+        console.error("Error in profile name fetch:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProfileName();
+  }, []);
+
+  // Get display name - show blank while loading
+  const displayName = isLoading ? '' : profileName;
+
   return (
     <div className="container py-20 md:py-32">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
@@ -14,7 +49,7 @@ const HeroSection = () => {
             <span className="text-sm font-medium text-muted-foreground">Full-Stack Developer</span>
           </div>
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
-            Hi, I'm <span className="gradient-text">Mustaqeem</span>.
+            Hi, I'm <span className="gradient-text">{displayName}</span>.
             <br />
             I build things <br />
             for the web.

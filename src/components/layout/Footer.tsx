@@ -1,8 +1,44 @@
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 const Footer = () => {
+  const [profileName, setProfileName] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch the profile name from database
+  useEffect(() => {
+    const fetchProfileName = async () => {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('name')
+          .single();
+        
+        if (error && error.code !== 'PGRST116') {
+          console.error("Error fetching profile name:", error);
+          setIsLoading(false);
+          return;
+        }
+
+        if (data?.name) {
+          setProfileName(data.name);
+        }
+      } catch (error) {
+        console.error("Error in profile name fetch:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProfileName();
+  }, []);
+
+  // Get display name - show blank while loading
+  const displayName = isLoading ? '' : profileName;
+  const displayInitials = isLoading ? '' : profileName.substring(0, 2).toUpperCase();
+
   return (
     <footer className="w-full bg-secondary/30 py-12 mt-20">
       <div className="container grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -11,10 +47,12 @@ const Footer = () => {
             <div className="relative h-6 w-6">
               <div className="absolute inset-0 bg-primary rounded-full animate-pulse opacity-70"></div>
               <div className="absolute inset-1 bg-background rounded-full flex items-center justify-center">
-                <span className="font-bold text-xs text-primary">GG</span>
+                <span className="font-bold text-xs text-primary">
+                  {displayInitials}
+                </span>
               </div>
             </div>
-            <span className="font-bold text-lg tracking-tight">GARUXGARU</span>
+            <span className="font-bold text-lg tracking-tight">{displayName.toUpperCase()}</span>
           </Link>
           <p className="text-sm text-muted-foreground max-w-xs">
             A modern, dark-themed developer portfolio showcasing projects, skills, and experience with a touch of interactivity.
@@ -59,7 +97,7 @@ const Footer = () => {
       <div className="container mt-8 pt-4 border-t border-muted">
         <div className="flex flex-col md:flex-row justify-between items-center">
           <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} GARUXGARU. All rights reserved.
+            © {new Date().getFullYear()} {displayName}. All rights reserved.
           </p>
           <div className="flex gap-4 mt-2 md:mt-0">
             <Link to="/privacy" className="text-xs text-muted-foreground hover:text-primary transition-colors">
