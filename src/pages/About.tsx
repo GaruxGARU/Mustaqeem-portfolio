@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CircleUser, Book, Briefcase, Code, FolderGit2, Globe } from 'lucide-react';
+import { 
+  CircleUser, Book, Briefcase, Code, FolderGit2, Globe, Loader2,
+  Camera, Music, Book as BookIcon, Code as CodeIcon, Film, Gamepad2, Palette, 
+  Bike, Utensils, Dumbbell, GraduationCap, Heart, 
+  Plane, Coffee, PlaneTakeoff, Laptop, Mountain, Tv, Flower2
+} from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 
@@ -71,6 +75,29 @@ interface Language {
   updated_at: string;
 }
 
+interface Profile {
+  id: string;
+  name: string | null;
+  bio: string | null;
+  avatar_url: string | null;
+}
+
+interface Hobby {
+  id: string;
+  name: string;
+  description: string | null;
+  icon: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface JourneyContent {
+  id: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+}
+
 const About = () => {
   const [skills, setSkills] = useState<Skill[]>([]);
   const [featuredProjects, setFeaturedProjects] = useState<Project[]>([]);
@@ -78,8 +105,12 @@ const About = () => {
   const [education, setEducation] = useState<TimelineItem[]>([]);
   const [personalInfo, setPersonalInfo] = useState<PersonalInfo | null>(null);
   const [languages, setLanguages] = useState<Language[]>([]);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [hobbies, setHobbies] = useState<Hobby[]>([]);
+  const [journeyContent, setJourneyContent] = useState<JourneyContent | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [imageLoading, setImageLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -94,7 +125,9 @@ const About = () => {
           .order('proficiency', { ascending: false })
           .limit(10);
 
-        if (skillsError) throw new Error(skillsError.message);
+        if (skillsError) {
+          console.error("Error fetching skills:", skillsError);
+        }
 
         // Fetch featured projects
         const { data: projectsData, error: projectsError } = await supabase
@@ -103,31 +136,40 @@ const About = () => {
           .eq('featured', true)
           .limit(3);
 
-        if (projectsError) throw new Error(projectsError.message);
+        if (projectsError) {
+          console.error("Error fetching projects:", projectsError);
+        }
         
-        // Fetch work experience - first get all items, then sort them manually
+        // Fetch work experience
         const { data: workData, error: workError } = await supabase
           .from('work_experience')
-          .select('id, title, company_name, position, start_date, end_date, current, description, location, tags, created_at, updated_at');
-          
-        if (workError) throw new Error(workError.message);
+          .select('*')
+          .order('current', { ascending: false })
+          .order('start_date', { ascending: false });
         
-        // Fetch education - first get all items, then sort them manually
+        if (workError) {
+          console.error("Error fetching work experience:", workError);
+        }
+        
+        // Fetch education
         const { data: educationData, error: educationError } = await supabase
           .from('education')
-          .select('id, title, institution_name, organization, start_date, end_date, current, description, location, tags, created_at, updated_at');
-          
-        if (educationError) throw new Error(educationError.message);
+          .select('*')
+          .order('current', { ascending: false })
+          .order('start_date', { ascending: false });
+        
+        if (educationError) {
+          console.error("Error fetching education:", educationError);
+        }
         
         // Fetch personal info
         const { data: personalInfoData, error: personalInfoError } = await supabase
           .from('personal_info')
           .select('*')
           .single();
-          
+        
         if (personalInfoError && personalInfoError.code !== 'PGRST116') {
-          // PGRST116 means no rows returned, which is fine - just means no personal info yet
-          throw new Error(personalInfoError.message);
+          console.error("Error fetching personal info:", personalInfoError);
         }
         
         // Fetch languages
@@ -136,9 +178,41 @@ const About = () => {
           .select('*')
           .order('is_native', { ascending: false });
           
-        if (languagesError) throw new Error(languagesError.message);
+        if (languagesError) {
+          console.error("Error fetching languages:", languagesError);
+        }
 
-        setSkills(skillsData as Skill[]);
+        // Fetch profile
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .single();
+
+        if (profileError && profileError.code !== 'PGRST116') {
+          console.error("Error fetching profile:", profileError);
+        }
+
+        // Fetch hobbies
+        const { data: hobbiesData, error: hobbiesError } = await supabase
+          .from('hobbies')
+          .select('*')
+          .order('created_at', { ascending: false });
+          
+        if (hobbiesError) {
+          console.error("Error fetching hobbies:", hobbiesError);
+        }
+
+        // Fetch journey content
+        const { data: journeyData, error: journeyError } = await supabase
+          .from('journey_content')
+          .select('*')
+          .single();
+          
+        if (journeyError && journeyError.code !== 'PGRST116') {
+          console.error("Error fetching journey content:", journeyError);
+        }
+
+        setSkills(skillsData as Skill[] || []);
         
         const processedProjectsData = ((projectsData ?? []) as Project[]).map(p => ({
           ...p,
@@ -177,9 +251,16 @@ const About = () => {
         
         setEducation(processedEducationData);
         
-        // Set personal info and languages
-        setPersonalInfo(personalInfoData as PersonalInfo);
-        setLanguages(languagesData as Language[]);
+        // Set personal info, languages, profile, hobbies, and journey content
+        setPersonalInfo(personalInfoData as PersonalInfo || null);
+        setLanguages(languagesData as Language[] || []);
+        setProfile(profileData as Profile || null);
+        setHobbies(hobbiesData as Hobby[] || []);
+        setJourneyContent(journeyData as JourneyContent || null);
+        
+        // Debug: Log profile and journey data
+        console.log("Profile data from Supabase:", profileData);
+        console.log("Journey content from Supabase:", journeyData);
       } catch (err) {
         console.error("Error fetching data:", err);
         setError('Failed to load data');
@@ -196,6 +277,27 @@ const About = () => {
     .sort((a, b) => b.proficiency - a.proficiency)
     .slice(0, 5);
 
+  // Get the profile image URL with a timestamp to prevent caching issues
+  const getProfileImageUrl = () => {
+    if (!profile?.avatar_url) return import.meta.env.BASE_URL + "placeholder.svg";
+    
+    // Add a cache-busting timestamp query param
+    const timestamp = Date.now();
+    const url = new URL(profile.avatar_url);
+    url.searchParams.set('t', timestamp.toString());
+    return url.toString();
+  };
+
+  // Default journey content if none is found in the database
+  const journeyContentText = journeyContent?.content || 
+    "I'm a passionate full-stack developer with over 8 years of experience building web applications that solve real-world problems. My journey in web development began when I built my first website at the age of 14, and I've been hooked ever since.\n\nI specialize in building modern, responsive, and accessible web applications using the latest technologies. I'm constantly learning and exploring new technologies to stay at the forefront of web development.\n\nWhen I'm not coding, you can find me hiking, reading science fiction, or experimenting with new recipes in the kitchen. I believe in writing clean, maintainable code and enjoy mentoring other developers.";
+
+  // Convert content with newlines to paragraphs for rendering
+  const journeyParagraphs = journeyContentText.split('\n\n').filter(p => p.trim() !== '');
+
+  // For fallback placeholder
+  const placeholderImage = import.meta.env.BASE_URL + "placeholder.svg";
+
   return (
     <Layout>
       <div className="container py-12">
@@ -211,10 +313,23 @@ const About = () => {
           <div className="md:col-span-1">
             <div className="sticky top-24">
               <div className="relative w-full aspect-square mb-6 overflow-hidden rounded-lg animate-on-scroll">
+                {/* Loading state overlay */}
+                {imageLoading && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-secondary/20 z-10">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                )}
+                
                 <img 
-                  src="/placeholder.svg" 
+                  src={getProfileImageUrl()}
                   alt="Profile" 
                   className="object-cover w-full h-full"
+                  onLoad={() => setImageLoading(false)}
+                  onError={(e) => {
+                    console.error("Error loading avatar image:", e);
+                    e.currentTarget.src = placeholderImage;
+                    setImageLoading(false);
+                  }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent"></div>
               </div>
@@ -331,6 +446,62 @@ const About = () => {
                     </div>
                   )}
                 </div>
+
+                <div className="animate-on-scroll mt-6">
+                  <h2 className="text-xl font-semibold mb-3 flex items-center gap-2">
+                    <Heart className="h-5 w-5 text-primary" />
+                    Interests & Hobbies
+                  </h2>
+                  {loading ? (
+                    <p className="text-sm text-muted-foreground">Loading hobbies...</p>
+                  ) : error ? (
+                    <p className="text-sm text-destructive">Error loading hobbies</p>
+                  ) : hobbies.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No interests or hobbies found</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {hobbies.map((hobby) => {
+                        // Function to get the appropriate icon component
+                        const getIconComponent = (iconName: string | null) => {
+                          switch(iconName) {
+                            case 'camera': return <Camera />;
+                            case 'music': return <Music />;
+                            case 'book': return <BookIcon />;
+                            case 'code': return <CodeIcon />;
+                            case 'film': return <Film />;
+                            case 'gamepad2': return <Gamepad2 />;
+                            case 'palette': return <Palette />;
+                            case 'bike': return <Bike />;
+                            case 'utensils': return <Utensils />;
+                            case 'dumbbell': return <Dumbbell />;
+                            case 'graduationCap': return <GraduationCap />;
+                            case 'heart': return <Heart />;
+                            case 'plane': return <Plane />;
+                            case 'coffee': return <Coffee />;
+                            case 'planeTakeoff': return <PlaneTakeoff />;
+                            case 'laptop': return <Laptop />;
+                            case 'mountain': return <Mountain />;
+                            case 'tv': return <Tv />;
+                            case 'globe': return <Globe />;
+                            case 'flower2': return <Flower2 />;
+                            default: return <Heart />;
+                          }
+                        };
+                        
+                        const IconComponent = getIconComponent(hobby.icon);
+                        
+                        return (
+                          <div key={hobby.id} className="inline-flex items-center gap-2 mb-2">
+                            <div className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                              {IconComponent}
+                            </div>
+                            <span className="text-xs">{hobby.name}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -339,225 +510,160 @@ const About = () => {
             <Card className="bg-secondary/20 border border-secondary mb-10 animate-on-scroll">
               <CardContent className="p-6">
                 <h2 className="text-2xl font-semibold mb-4">My Journey</h2>
-                <p className="mb-4 text-muted-foreground">
-                  I'm a passionate full-stack developer with over 8 years of experience building web applications
-                  that solve real-world problems. My journey in web development began when I built my first website
-                  at the age of 14, and I've been hooked ever since.
-                </p>
-                <p className="mb-4 text-muted-foreground">
-                  I specialize in building modern, responsive, and accessible web applications using the latest
-                  technologies. I'm constantly learning and exploring new technologies to stay at the forefront
-                  of web development.
-                </p>
-                <p className="text-muted-foreground">
-                  When I'm not coding, you can find me hiking, reading science fiction, or experimenting with
-                  new recipes in the kitchen. I believe in writing clean, maintainable code and enjoy mentoring
-                  other developers.
-                </p>
+                {journeyParagraphs.map((paragraph, index) => (
+                  <p key={index} className={`text-muted-foreground ${index < journeyParagraphs.length - 1 ? 'mb-4' : ''}`}>
+                    {paragraph}
+                  </p>
+                ))}
               </CardContent>
             </Card>
             
-            <Tabs defaultValue="experience" className="mb-10">
-              <TabsList className="mb-8 flex justify-start bg-secondary/30 p-1 w-full max-w-md">
-                <TabsTrigger value="experience" className="flex items-center gap-2">
-                  <Briefcase className="h-4 w-4" />
-                  Experience
-                </TabsTrigger>
-                <TabsTrigger value="education" className="flex items-center gap-2">
-                  <Book className="h-4 w-4" />
-                  Education
-                </TabsTrigger>
-                <TabsTrigger value="projects" className="flex items-center gap-2">
-                  <FolderGit2 className="h-4 w-4" />
-                  Projects
-                </TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="experience" className="animate-on-scroll">
-                <h2 className="text-2xl font-semibold mb-6">Work Experience</h2>
-                {loading ? (
-                  <div className="flex justify-center py-12 text-lg">Loading work experience...</div>
-                ) : error ? (
-                  <div className="flex justify-center py-12 text-destructive">{error}</div>
-                ) : workExperience.length === 0 ? (
-                  <div className="flex justify-center py-12 text-muted-foreground">No work experience found.</div>
-                ) : (
-                  <div className="relative border-l border-primary/50 pl-6 ml-3 space-y-10">
-                    {workExperience.map((item) => (
-                      <div key={item.id} className="relative">
-                        <div className="absolute -left-9 rounded-full bg-secondary/30 border border-primary p-1">
-                          <div className="h-3 w-3 rounded-full bg-primary"></div>
-                        </div>
-                        <div className="mb-1">
-                          <h3 className="text-xl font-medium inline-flex items-center">
-                            {item.title}
-                            <span className="ml-3 text-sm font-normal text-muted-foreground">
-                              {format(new Date(item.start_date), 'MMM yyyy')} - {item.current ? 'Present' : format(new Date(item.end_date || ''), 'MMM yyyy')}
-                            </span>
-                          </h3>
-                        </div>
-                        <p className="text-primary font-medium mb-3">{item.company_name}</p>
-                        <p className="text-sm text-muted-foreground mb-3">{item.description}</p>
-                        {item.tags && (
-                          <div className="flex flex-wrap gap-2">
-                            {item.tags.map((tag, index) => (
-                              <Badge key={index} variant="secondary" className="text-xs">
-                                {tag}
-                              </Badge>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </TabsContent>
-              
-              <TabsContent value="education" className="animate-on-scroll">
-                <h2 className="text-2xl font-semibold mb-6">Education</h2>
-                {loading ? (
-                  <div className="flex justify-center py-12 text-lg">Loading education...</div>
-                ) : error ? (
-                  <div className="flex justify-center py-12 text-destructive">{error}</div>
-                ) : education.length === 0 ? (
-                  <div className="flex justify-center py-12 text-muted-foreground">No education found.</div>
-                ) : (
-                  <div className="relative border-l border-primary/50 pl-6 ml-3 space-y-10">
-                    {education.map((item) => (
-                      <div key={item.id} className="relative">
-                        <div className="absolute -left-9 rounded-full bg-secondary/30 border border-primary p-1">
-                          <div className="h-3 w-3 rounded-full bg-primary"></div>
-                        </div>
-                        <div className="mb-1">
-                          <h3 className="text-xl font-medium inline-flex items-center">
-                            {item.title}
-                            <span className="ml-3 text-sm font-normal text-muted-foreground">
-                              {format(new Date(item.start_date), 'MMM yyyy')} - {item.current ? 'Present' : format(new Date(item.end_date || ''), 'MMM yyyy')}
-                            </span>
-                          </h3>
-                        </div>
-                        <p className="text-primary font-medium mb-3">{item.organization}</p>
-                        <p className="text-sm text-muted-foreground mb-3">{item.description}</p>
-                        {item.tags && (
-                          <div className="flex flex-wrap gap-2">
-                            {item.tags.map((tag, index) => (
-                              <Badge key={index} variant="secondary" className="text-xs">
-                                {tag}
-                              </Badge>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </TabsContent>
-
-              <TabsContent value="projects" className="animate-on-scroll">
-                <h2 className="text-2xl font-semibold mb-6">Featured Projects</h2>
-                {loading ? (
-                  <div className="flex justify-center py-12 text-lg">Loading projects...</div>
-                ) : error ? (
-                  <div className="flex justify-center py-12 text-destructive">{error}</div>
-                ) : featuredProjects.length === 0 ? (
-                  <div className="flex justify-center py-12 text-muted-foreground">No projects found.</div>
-                ) : (
-                  <div className="space-y-8">
-                    {featuredProjects.map((project) => (
-                      <Card key={project.id} className="bg-secondary/10 border border-secondary overflow-hidden">
-                        <CardContent className="p-6">
-                          <div className="flex flex-col md:flex-row gap-6">
-                            {project.image_url && (
-                              <div className="md:w-1/3 aspect-video rounded-lg overflow-hidden">
-                                <img 
-                                  src={project.image_url || "/placeholder.svg"} 
-                                  alt={project.title}
-                                  className="w-full h-full object-cover"
-                                  onError={(e) => {
-                                    e.currentTarget.src = "/placeholder.svg";
-                                  }}
-                                />
-                              </div>
-                            )}
-                            <div className={project.image_url ? "md:w-2/3" : "w-full"}>
-                              <h3 className="text-xl font-semibold mb-2">{project.title}</h3>
-                              <p className="text-sm text-muted-foreground mb-3">{project.description}</p>
-                              <div className="flex flex-wrap gap-2 mb-4">
-                                {project.tags?.map((tag, index) => (
-                                  <Badge key={index} variant="secondary" className="text-xs">
-                                    {tag}
-                                  </Badge>
-                                ))}
-                              </div>
-                              <div className="flex flex-wrap gap-3">
-                                {project.demo_url && (
-                                  <a 
-                                    href={project.demo_url} 
-                                    target="_blank" 
-                                    rel="noreferrer"
-                                    className="text-sm text-primary hover:text-primary/80 font-medium"
-                                  >
-                                    Live Demo
-                                  </a>
-                                )}
-                                {project.github_url && (
-                                  <a 
-                                    href={project.github_url} 
-                                    target="_blank" 
-                                    rel="noreferrer"
-                                    className="text-sm text-primary hover:text-primary/80 font-medium"
-                                  >
-                                    Source Code
-                                  </a>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-              </TabsContent>
-            </Tabs>
-            
-            <div className="animate-on-scroll mb-10">
-              <h2 className="text-2xl font-semibold mb-6">Skills Overview</h2>
+            {/* Work Experience Section */}
+            <div className="mb-16 animate-on-scroll">
+              <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
+                <Briefcase className="h-5 w-5 text-primary" />
+                Work Experience
+              </h2>
               {loading ? (
-                <div className="flex justify-center py-6 text-lg">Loading skills...</div>
+                <div className="flex justify-center py-12 text-lg">Loading work experience...</div>
               ) : error ? (
-                <div className="flex justify-center py-6 text-destructive">{error}</div>
+                <div className="flex justify-center py-12 text-destructive">{error}</div>
+              ) : workExperience.length === 0 ? (
+                <div className="flex justify-center py-12 text-muted-foreground">No work experience found.</div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {skills.map((skill) => (
-                    <div key={skill.id} className="flex items-center gap-4 p-3 rounded-lg bg-secondary/10 border border-secondary/50">
-                      <div className="w-full">
-                        <div className="flex justify-between mb-1">
-                          <span className="font-medium">{skill.name}</span>
-                          <span>{skill.proficiency}%</span>
-                        </div>
-                        <div className="w-full h-2 bg-secondary/30 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-primary rounded-full"
-                            style={{ width: `${skill.proficiency}%` }}
-                          ></div>
-                        </div>
+                <div className="relative border-l border-primary/50 pl-6 ml-3 space-y-10">
+                  {workExperience.map((item) => (
+                    <div key={item.id} className="relative">
+                      <div className="absolute -left-9 rounded-full bg-secondary/30 border border-primary p-1">
+                        <div className="h-3 w-3 rounded-full bg-primary"></div>
                       </div>
+                      <div className="mb-1">
+                        <h3 className="text-xl font-medium inline-flex items-center">
+                          {item.title}
+                          <span className="ml-3 text-sm font-normal text-muted-foreground">
+                            {format(new Date(item.start_date), 'MMM yyyy')} - {item.current ? 'Present' : format(new Date(item.end_date || ''), 'MMM yyyy')}
+                          </span>
+                        </h3>
+                      </div>
+                      <p className="text-primary font-medium mb-3">{item.company_name}</p>
+                      <p className="text-sm text-muted-foreground mb-3">{item.description}</p>
+                      {item.tags && (
+                        <div className="flex flex-wrap gap-2">
+                          {item.tags.map((tag, index) => (
+                            <Badge key={index} variant="secondary" className="text-xs">
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
               )}
             </div>
             
-            <div className="animate-on-scroll">
-              <h2 className="text-2xl font-semibold mb-6">Interests & Hobbies</h2>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {["Open Source", "Reading", "Hiking", "Gaming", "Photography", "Cooking"].map((hobby, index) => (
-                  <div key={index} className="bg-secondary/20 border border-secondary rounded-lg p-4 text-center">
-                    <span>{hobby}</span>
-                  </div>
-                ))}
-              </div>
+            {/* Education Section */}
+            <div className="mb-16 animate-on-scroll">
+              <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
+                <Book className="h-5 w-5 text-primary" />
+                Education
+              </h2>
+              {loading ? (
+                <div className="flex justify-center py-12 text-lg">Loading education...</div>
+              ) : error ? (
+                <div className="flex justify-center py-12 text-destructive">{error}</div>
+              ) : education.length === 0 ? (
+                <div className="flex justify-center py-12 text-muted-foreground">No education found.</div>
+              ) : (
+                <div className="relative border-l border-primary/50 pl-6 ml-3 space-y-10">
+                  {education.map((item) => (
+                    <div key={item.id} className="relative">
+                      <div className="absolute -left-9 rounded-full bg-secondary/30 border border-primary p-1">
+                        <div className="h-3 w-3 rounded-full bg-primary"></div>
+                      </div>
+                      <div className="mb-1">
+                        <h3 className="text-xl font-medium inline-flex items-center">
+                          {item.title}
+                          <span className="ml-3 text-sm font-normal text-muted-foreground">
+                            {format(new Date(item.start_date), 'MMM yyyy')} - {item.current ? 'Present' : format(new Date(item.end_date || ''), 'MMM yyyy')}
+                          </span>
+                        </h3>
+                      </div>
+                      <p className="text-primary font-medium mb-3">{item.organization}</p>
+                      <p className="text-sm text-muted-foreground mb-3">{item.description}</p>
+                      {item.tags && (
+                        <div className="flex flex-wrap gap-2">
+                          {item.tags.map((tag, index) => (
+                            <Badge key={index} variant="secondary" className="text-xs">
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            {/* Projects Section */}
+            <div className="mb-16 animate-on-scroll">
+              <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
+                <FolderGit2 className="h-5 w-5 text-primary" />
+                Featured Projects
+              </h2>
+              {loading ? (
+                <div className="flex justify-center py-12 text-lg">Loading projects...</div>
+              ) : error ? (
+                <div className="flex justify-center py-12 text-destructive">{error}</div>
+              ) : featuredProjects.length === 0 ? (
+                <div className="flex justify-center py-12 text-muted-foreground">No projects found.</div>
+              ) : (
+                <div className="space-y-6">
+                  {featuredProjects.map((project) => (
+                    <div key={project.id} className="border border-primary/20 rounded-md p-4 bg-secondary/5 hover:bg-secondary/10 transition-colors">                      
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="text-xl font-medium">{project.title}</h3>
+                      </div>
+                      
+                      <p className="text-sm text-muted-foreground mb-3">{project.description}</p>
+                      
+                      {project.tags && project.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          {project.tags.map((tag, index) => (
+                            <Badge key={index} variant="secondary" className="text-xs">
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                      
+                      <div className="flex flex-wrap gap-4">
+                        {project.demo_url && (
+                          <a 
+                            href={project.demo_url} 
+                            target="_blank" 
+                            rel="noreferrer"
+                            className="text-sm text-primary hover:text-primary/80 font-medium flex items-center gap-1"
+                          >
+                            <Globe className="h-4 w-4" /> View Demo
+                          </a>
+                        )}
+                        {project.github_url && (
+                          <a 
+                            href={project.github_url} 
+                            target="_blank" 
+                            rel="noreferrer"
+                            className="text-sm text-primary hover:text-primary/80 font-medium flex items-center gap-1"
+                          >
+                            <FolderGit2 className="h-4 w-4" /> Source Code
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

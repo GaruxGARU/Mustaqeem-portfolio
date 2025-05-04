@@ -11,6 +11,8 @@ import ManageWorkExperienceDialog from '@/components/dashboard/ManageWorkExperie
 import ManageEducationDialog from '@/components/dashboard/ManageEducationDialog';
 import ManagePersonalInfoDialog from '@/components/dashboard/ManagePersonalInfoDialog';
 import ManageLanguagesDialog from '@/components/dashboard/ManageLanguagesDialog';
+import ManageHobbiesDialog from '@/components/dashboard/ManageHobbiesDialog';
+import ManageJourneyDialog from '@/components/dashboard/ManageJourneyDialog';
 
 const Dashboard = () => {
   const { user, loading, signOut } = useAuth();
@@ -21,6 +23,8 @@ const Dashboard = () => {
   const [isManageEducationOpen, setIsManageEducationOpen] = useState(false);
   const [isManagePersonalInfoOpen, setIsManagePersonalInfoOpen] = useState(false);
   const [isManageLanguagesOpen, setIsManageLanguagesOpen] = useState(false);
+  const [isManageHobbiesOpen, setIsManageHobbiesOpen] = useState(false);
+  const [isManageJourneyOpen, setIsManageJourneyOpen] = useState(false);
 
   // Redirect to login if not authenticated
   if (!loading && !user) {
@@ -97,6 +101,23 @@ const Dashboard = () => {
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               <Card>
                 <CardHeader>
+                  <CardTitle>My Journey</CardTitle>
+                  <CardDescription>Your professional story</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="mb-4">Edit the introduction text on your About page</p>
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => setIsManageJourneyOpen(true)}
+                  >
+                    Edit My Journey
+                  </Button>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
                   <CardTitle>Your Projects</CardTitle>
                   <CardDescription>Manage your portfolio projects</CardDescription>
                 </CardHeader>
@@ -162,6 +183,23 @@ const Dashboard = () => {
                   </Button>
                 </CardContent>
               </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle>Interests & Hobbies</CardTitle>
+                  <CardDescription>Your personal interests</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="mb-4">Add your hobbies and personal interests</p>
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => setIsManageHobbiesOpen(true)}
+                  >
+                    Manage Hobbies
+                  </Button>
+                </CardContent>
+              </Card>
             </div>
           </>
         )}
@@ -200,6 +238,16 @@ const Dashboard = () => {
         <ManageEducationDialog
           open={isManageEducationOpen}
           onOpenChange={setIsManageEducationOpen}
+        />
+
+        <ManageHobbiesDialog
+          open={isManageHobbiesOpen}
+          onOpenChange={setIsManageHobbiesOpen}
+        />
+        
+        <ManageJourneyDialog
+          open={isManageJourneyOpen}
+          onOpenChange={setIsManageJourneyOpen}
         />
       </div>
     </Layout>

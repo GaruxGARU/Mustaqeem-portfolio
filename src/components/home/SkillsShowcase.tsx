@@ -11,6 +11,7 @@ interface Skill {
   description: string | null;
   projects: number | null;
   years: number | null;
+  image_url: string | null;
 }
 
 interface SkillCategory {
@@ -31,7 +32,7 @@ const SkillsShowcase = () => {
       try {
         const { data, error } = await supabase
           .from('skills')
-          .select('id, name, category, proficiency')
+          .select('id, name, category, proficiency, image_url')
           .order('category', { ascending: true })
           .order('proficiency', { ascending: false });
 
@@ -107,8 +108,17 @@ const SkillsShowcase = () => {
                       <Badge 
                         key={skill.id} 
                         variant="outline"
-                        className="bg-background hover:bg-secondary transition-colors px-3 py-1 text-sm"
+                        className="bg-background hover:bg-secondary transition-colors px-3 py-1 text-sm flex items-center gap-2"
                       >
+                        {skill.image_url && (
+                          <div className="h-4 w-4 rounded overflow-hidden bg-muted flex-shrink-0">
+                            <img 
+                              src={skill.image_url} 
+                              alt=""
+                              className="h-full w-full object-contain" 
+                            />
+                          </div>
+                        )}
                         {skill.name}
                       </Badge>
                     ))}

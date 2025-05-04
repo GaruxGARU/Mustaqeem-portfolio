@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -54,20 +53,159 @@ const ProjectForm = ({
     }
   });
 
-  const handleSubmit = (data: any) => {
-    // Convert tags string to array if it's a string
-    const formattedData = {
-      ...data,
-      tags: typeof data.tags === 'string' 
-        ? data.tags.split(',').map((tag: string) => tag.trim()) 
-        : data.tags
-    };
-    onSubmit(formattedData);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(initialData?.image_url || null);
+  const [uploading, setUploading] = useState(false);
+  const [removeExistingImage, setRemoveExistingImage] = useState(false);
+  const { toast } = useToast();
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      // Create preview URL
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+      setRemoveExistingImage(false);
+    }
+  };
+
+  const handleRemoveImage = async () => {
+    // If we have an initial image (updating a project) and it's from Supabase
+    if (initialData?.image_url && initialData.image_url.includes('supabase')) {
+      try {
+        setRemoveExistingImage(true);
+        setImagePreview(null);
+        setImageFile(null);
+        
+        toast({
+          title: "Image removed",
+          description: "The image will be removed when you save changes",
+        });
+      } catch (error) {
+        console.error("Error processing image removal:", error);
+        toast({
+          title: "Error",
+          description: "Failed to remove image",
+          variant: "destructive"
+        });
+      }
+    } else {
+      // Just remove the local file/preview
+      setImagePreview(null);
+      setImageFile(null);
+      setRemoveExistingImage(true);
+    }
+  };
+
+  const handleFormSubmit = async (data: any) => {
+    try {
+      // Convert tags string to array if it's a string
+      const formattedData = {
+        ...data,
+        tags: typeof data.tags === 'string' 
+          ? data.tags.split(',').map((tag: string) => tag.trim()) 
+          : data.tags
+      };
+      
+      // Set uploading state
+      setUploading(true);
+      
+      // If the user wants to remove the existing image
+      if (removeExistingImage && initialData?.image_url && initialData.image_url.includes('supabase')) {
+        try {
+          // Extract the file path from the URL
+          const url = new URL(initialData.image_url);
+          const pathParts = url.pathname.split('/');
+          const filePath = pathParts.slice(3).join('/');
+          
+          // Remove the file from storage
+          await supabase.storage
+            .from('project_images')
+            .remove([filePath]);
+            
+          // Set image_url to null
+          formattedData.image_url = null;
+        } catch (error) {
+          console.error("Error removing image from storage:", error);
+          // Continue with form submit even if image deletion fails
+        }
+      }
+      
+      // If there's a new image to upload
+      if (imageFile) {
+        try {
+          // If replacing an existing image, try to delete the old one first
+          if (initialData?.image_url && initialData.image_url.includes('supabase')) {
+            try {
+              const url = new URL(initialData.image_url);
+              const pathParts = url.pathname.split('/');
+              const filePath = pathParts.slice(3).join('/');
+              
+              await supabase.storage
+                .from('project_images')
+                .remove([filePath]);
+            } catch (error) {
+              console.error("Error removing old image:", error);
+              // Continue with upload even if old image deletion fails
+            }
+          }
+          
+          // Generate a unique file path
+          const filePath = `${Date.now()}_${imageFile.name.replace(/[^a-zA-Z0-9-_.]/g, '_')}`;
+          
+          // Upload the file to Supabase Storage
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('project_images')
+            .upload(filePath, imageFile, {
+              cacheControl: '3600',
+              upsert: false
+            });
+            
+          if (uploadError) {
+            throw uploadError;
+          }
+          
+          // Get the public URL
+          const { data: { publicUrl } } = supabase.storage
+            .from('project_images')
+            .getPublicUrl(filePath);
+            
+          // Add the image URL to the form data
+          formattedData.image_url = publicUrl;
+        } catch (error) {
+          console.error("Error uploading image:", error);
+          toast({
+            title: "Warning",
+            description: "Failed to upload image, but project data will be saved",
+            variant: "default"
+          });
+        }
+      } else if (initialData?.image_url && !removeExistingImage) {
+        // Keep existing image if no new one was uploaded and not removing
+        formattedData.image_url = initialData.image_url;
+      }
+      
+      // Submit the form data
+      onSubmit(formattedData);
+    } catch (error) {
+      console.error("Error in form submission:", error);
+      toast({
+        title: "Error",
+        description: "An error occurred while processing your request",
+        variant: "destructive"
+      });
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
         <FormField
           control={form.control}
           name="title"
@@ -94,18 +232,43 @@ const ProjectForm = ({
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="image_url"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Image URL</FormLabel>
-              <FormControl>
-                <Input {...field} placeholder="https://example.com/image.jpg" />
-              </FormControl>
-            </FormItem>
-          )}
-        />
+        {/* Image Upload Field */}
+        <FormItem>
+          <FormLabel>Project Image</FormLabel>
+          <FormControl>
+            <div className="flex flex-col gap-2">
+              <Input 
+                type="file" 
+                accept="image/*"
+                onChange={handleImageChange}
+                disabled={uploading}
+              />
+              {(imagePreview || (initialData?.image_url && !removeExistingImage)) && (
+                <div className="mt-2 relative w-full h-40 rounded overflow-hidden border border-border">
+                  <img 
+                    src={imagePreview || initialData?.image_url || ''} 
+                    alt="Project preview" 
+                    className="w-full h-full object-cover"
+                  />
+                  <Button 
+                    type="button"
+                    variant="destructive" 
+                    size="icon"
+                    className="absolute top-2 right-2 h-6 w-6 rounded-full" 
+                    onClick={handleRemoveImage}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                      <path d="M18 6 6 18"></path>
+                      <path d="m6 6 12 12"></path>
+                    </svg>
+                    <span className="sr-only">Remove image</span>
+                  </Button>
+                </div>
+              )}
+            </div>
+          </FormControl>
+          <FormMessage>Upload a screenshot or image for your project</FormMessage>
+        </FormItem>
 
         <FormField
           control={form.control}
@@ -389,6 +552,15 @@ const ManageProjectsDialog = ({ open, onOpenChange }: ManageProjectsDialogProps)
               <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
                 {projects.map((project) => (
                   <Card key={project.id}>
+                    {project.image_url && (
+                      <div className="w-full h-32 overflow-hidden">
+                        <img 
+                          src={project.image_url} 
+                          alt={project.title}
+                          className="w-full h-full object-cover" 
+                        />
+                      </div>
+                    )}
                     <CardHeader className="pb-2">
                       <div className="flex justify-between items-start">
                         <CardTitle className="text-lg">{project.title}</CardTitle>

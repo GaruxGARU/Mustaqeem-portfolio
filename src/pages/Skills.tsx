@@ -14,6 +14,7 @@ interface Skill {
   description: string | null;
   projects: number | null;
   years: number | null;
+  image_url: string | null;
 }
 
 const certifications = [
@@ -39,7 +40,7 @@ const Skills = () => {
       try {
         const { data, error } = await supabase
           .from('skills')
-          .select('id, name, category, proficiency, description, projects, years')
+          .select('id, name, category, proficiency, description, projects, years, image_url')
           .order('category', { ascending: true })
           .order('proficiency', { ascending: false });
 
@@ -152,7 +153,18 @@ const Skills = () => {
                                 onClick={() => setActiveSkill(skill === activeSkill ? null : skill)}
                               >
                                 <div className="flex justify-between mb-1">
-                                  <span className="font-medium">{skill.name}</span>
+                                  <div className="flex items-center gap-2">
+                                    {skill.image_url && (
+                                      <div className="h-6 w-6 rounded overflow-hidden bg-muted flex-shrink-0">
+                                        <img 
+                                          src={skill.image_url} 
+                                          alt={skill.name}
+                                          className="h-full w-full object-contain" 
+                                        />
+                                      </div>
+                                    )}
+                                    <span className="font-medium">{skill.name}</span>
+                                  </div>
                                   <span>{skill.proficiency}%</span>
                                 </div>
                                 <Progress value={skill.proficiency} className="h-2 mb-2" />
@@ -241,12 +253,21 @@ const Skills = () => {
                   <Badge
                     key={skill.id}
                     variant="outline"
-                    className="py-1.5 px-3"
+                    className="py-1.5 px-3 flex items-center gap-2"
                     style={{
                       fontSize: `${fontSize}rem`,
                       opacity: opacity
                     }}
                   >
+                    {skill.image_url && (
+                      <div className="h-5 w-5 rounded overflow-hidden bg-muted flex-shrink-0">
+                        <img 
+                          src={skill.image_url} 
+                          alt=""
+                          className="h-full w-full object-contain" 
+                        />
+                      </div>
+                    )}
                     {skill.name}
                   </Badge>
                 );
