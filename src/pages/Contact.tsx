@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 interface PersonalInfo {
   email: string | null;
   phone: string | null;
+  whatsapp: string | null;
   location: string | null;
   github: string | null;
   linkedin: string | null;
@@ -25,6 +26,7 @@ const Contact = () => {
   const [personalInfo, setPersonalInfo] = useState<PersonalInfo>({
     email: null,
     phone: null,
+    whatsapp: null,
     location: null,
     github: null,
     linkedin: null
@@ -39,7 +41,7 @@ const Contact = () => {
       try {
         const { data, error } = await supabase
           .from('personal_info')
-          .select('email, phone, location, github, linkedin')
+          .select('email, phone, whatsapp, location, github, linkedin')
           .single();
         
         if (error && error.code !== 'PGRST116') {
@@ -48,6 +50,7 @@ const Contact = () => {
           setPersonalInfo({
             email: data.email,
             phone: data.phone,
+            whatsapp: data.whatsapp,
             location: data.location,
             github: data.github,
             linkedin: data.linkedin
@@ -76,6 +79,24 @@ const Contact = () => {
     return personalInfo.linkedin.startsWith('http') ? 
       personalInfo.linkedin : 
       `https://linkedin.com/in/${personalInfo.linkedin}`;
+  };
+
+  // Send message via WhatsApp
+  const sendWhatsAppMessage = (whatsappNumber: string, formData: { name: string; email: string; subject: string; message: string }) => {
+    // Format the WhatsApp message
+    const whatsappMessage = `🔔 New contact form submission:\n\n👤 *${formData.name}*\n📧 ${formData.email}\n📝 *${formData.subject}*\n\n${formData.message}`;
+    
+    // Encode the message for URL
+    const encodedMessage = encodeURIComponent(whatsappMessage);
+    
+    // Format number to ensure it's valid (remove spaces, +, etc if needed)
+    const formattedNumber = whatsappNumber.replace(/\D/g, "");
+    
+    // Create WhatsApp API URL
+    const whatsappUrl = `https://api.whatsapp.com/send?phone=${formattedNumber}&text=${encodedMessage}`;
+    
+    // Open WhatsApp in a new tab/window
+    window.open(whatsappUrl, '_blank');
   };
   
   const handleSubmit = async (e: React.FormEvent) => {
@@ -107,6 +128,20 @@ const Contact = () => {
           title: "Message sent!",
           description: "Thank you for your message. I'll get back to you soon."
         });
+
+        // Send WhatsApp notification if a WhatsApp number is available
+        if (personalInfo.whatsapp) {
+          // Create a background timeout to not block the UI
+          setTimeout(() => {
+            sendWhatsAppMessage(personalInfo.whatsapp!, {
+              name,
+              email,
+              subject,
+              message
+            });
+          }, 500);
+        }
+        
         setName('');
         setEmail('');
         setSubject('');
@@ -225,11 +260,24 @@ const Contact = () => {
                     {personalInfo.phone || '+1 (234) 567-890'}
                   </a>
                 </div>
-                
+
                 <div className="flex flex-col space-y-2">
-                  <span className="text-lg font-medium">Location</span>
-                  <span>{personalInfo.location || 'San Francisco, CA'}</span>
+                  <span className="text-lg font-medium">WhatsApp</span>
+                  {personalInfo.whatsapp ? (
+                    <a href={`https://wa.me/${personalInfo.whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noreferrer" className="text-primary hover:underline">
+                      Message on WhatsApp
+                    </a>
+                  ) : (
+                    <span className="text-muted-foreground">No WhatsApp available</span>
+                  )}
                 </div>
+                
+                {personalInfo.location && (
+                  <div className="flex flex-col space-y-2">
+                    <span className="text-lg font-medium">Location</span>
+                    <span>{personalInfo.location}</span>
+                  </div>
+                )}
                 
                 <div className="flex flex-col space-y-2">
                   <span className="text-lg font-medium">Social Media</span>
@@ -257,18 +305,20 @@ const Contact = () => {
               </CardContent>
             </Card>
             
-            <div className="mt-8 bg-secondary/20 border border-secondary rounded-lg aspect-video">
-              <iframe 
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d100939.98555098464!2d-122.507640613356!3d37.75781499644896!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x80859a6d00690021%3A0x4a501367f076adff!2sSan%20Francisco%2C%20CA!5e0!3m2!1sen!2sus!4v1667791471195!5m2!1sen!2sus" 
-                width="100%" 
-                height="100%" 
-                style={{ border: 0 }} 
-                allowFullScreen={true} 
-                loading="lazy" 
-                referrerPolicy="no-referrer-when-downgrade"
-                title="Map"
-              ></iframe>
-            </div>
+            {personalInfo.location && (
+              <div className="mt-8 bg-secondary/20 border border-secondary rounded-lg aspect-video">
+                <iframe 
+                  src={`https://www.google.com/maps/embed/v1/place?key=YOUR_API_KEY&q=${encodeURIComponent(personalInfo.location)}`}
+                  width="100%" 
+                  height="100%" 
+                  style={{ border: 0 }} 
+                  allowFullScreen={true} 
+                  loading="lazy" 
+                  referrerPolicy="no-referrer-when-downgrade"
+                  title="Map"
+                ></iframe>
+              </div>
+            )}
           </div>
         </div>
       </div>

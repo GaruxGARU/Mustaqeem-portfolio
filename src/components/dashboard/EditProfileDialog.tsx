@@ -17,23 +17,20 @@ interface Profile {
   id: string;
   name: string | null;
   bio: string | null;
+  headline: string | null;
+  description: string | null;
   avatar_url: string | null;
 }
 
 const extractFilePathFromUrl = (url: string): string | null => {
   try {
     const parsedUrl = new URL(url);
-    // Extract the path parts after the storage endpoint
-    // Format is typically: https://{instance}.supabase.co/storage/v1/object/public/{bucket}/{file_path}
     const pathParts = parsedUrl.pathname.split('/');
-    // Look for the bucket name in the path
     const bucketIndex = pathParts.findIndex(part => part === 'profile_avatars');
     
     if (bucketIndex !== -1) {
-      // If bucket name is found, return everything after it
       return pathParts.slice(bucketIndex + 1).join('/');
     } else {
-      // If we can't find the bucket name, try the standard approach
       return pathParts.slice(3).join('/');
     }
   } catch (error) {
@@ -74,15 +71,15 @@ const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps) => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const { toast } = useToast();
 
-  // Form state
   const [name, setName] = useState('');
   const [bio, setBio] = useState('');
+  const [headline, setHeadline] = useState('');
+  const [description, setDescription] = useState('');
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [removeExistingAvatar, setRemoveExistingAvatar] = useState(false);
   const [uploading, setUploading] = useState(false);
 
-  // Fetch profile data
   useEffect(() => {
     if (open && user) {
       fetchProfile();
@@ -114,6 +111,8 @@ const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps) => {
         setProfile(data);
         setName(data.name || '');
         setBio(data.bio || '');
+        setHeadline(data.headline || 'I build things for the web');
+        setDescription(data.description || 'A passionate developer focused on creating interactive, accessible, and responsive web applications');
         setAvatarPreview(data.avatar_url);
         setRemoveExistingAvatar(false);
       }
@@ -133,7 +132,6 @@ const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps) => {
     const file = e.target.files?.[0];
     if (file) {
       setAvatarFile(file);
-      // Create preview URL
       const reader = new FileReader();
       reader.onloadend = () => {
         setAvatarPreview(reader.result as string);
@@ -165,8 +163,6 @@ const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps) => {
       
       let avatarUrl = profile?.avatar_url;
       
-      // Handle avatar upload/deletion
-      // If removing existing avatar
       if (removeExistingAvatar && profile?.avatar_url) {
         const deletionSuccess = await deleteImageFromStorage(profile.avatar_url);
         if (deletionSuccess) {
@@ -177,24 +173,20 @@ const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps) => {
         }
       }
       
-      // If uploading new avatar
       if (avatarFile) {
         try {
-          // If replacing an existing avatar, delete the old one first
           if (profile?.avatar_url) {
             await deleteImageFromStorage(profile.avatar_url);
           }
           
-          // Generate a unique file path
           const filePath = `${user.id}/${Date.now()}_${avatarFile.name.replace(/[^a-zA-Z0-9-_.]/g, '_')}`;
           console.log("Uploading avatar to path:", filePath);
           
-          // Upload the file to Supabase Storage
           const { data: uploadData, error: uploadError } = await supabase.storage
             .from('profile_avatars')
             .upload(filePath, avatarFile, {
               cacheControl: '3600',
-              upsert: true // Use upsert to overwrite if file exists
+              upsert: true
             });
             
           if (uploadError) {
@@ -204,14 +196,12 @@ const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps) => {
           
           console.log("Upload successful:", uploadData);
           
-          // Get the public URL
           const { data: { publicUrl } } = supabase.storage
             .from('profile_avatars')
             .getPublicUrl(filePath);
             
           console.log("Generated public URL:", publicUrl);
           
-          // Set the avatar URL
           avatarUrl = publicUrl;
         } catch (error) {
           console.error("Error uploading avatar:", error);
@@ -227,6 +217,8 @@ const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps) => {
         id: user.id,
         name,
         bio,
+        headline,
+        description,
         avatar_url: avatarUrl,
       };
 
@@ -259,7 +251,7 @@ const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Profile</DialogTitle>
           <DialogDescription>
@@ -268,7 +260,6 @@ const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps) => {
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
-          {/* Avatar Upload */}
           <div className="space-y-2">
             <Label>Profile Picture</Label>
             <div className="flex flex-col items-center space-y-4">
@@ -329,15 +320,47 @@ const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps) => {
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="bio">Bio</Label>
-            <Textarea
+            <Label htmlFor="bio">Professional Title</Label>
+            <Input
               id="bio"
               value={bio}
               onChange={(e) => setBio(e.target.value)}
-              placeholder="Tell us about yourself"
+              placeholder="e.g. Full-Stack Developer"
+              disabled={loading}
+            />
+            <p className="text-xs text-muted-foreground">
+              This appears at the top of your homepage
+            </p>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="headline">Headline</Label>
+            <Textarea
+              id="headline"
+              value={headline}
+              onChange={(e) => setHeadline(e.target.value)}
+              placeholder="e.g. I build things for the web"
+              disabled={loading}
+              className="min-h-[60px]"
+            />
+            <p className="text-xs text-muted-foreground">
+              Your main headline in the hero section
+            </p>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="description">Brief Description</Label>
+            <Textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="A short description about yourself and your work"
               disabled={loading}
               className="min-h-[100px]"
             />
+            <p className="text-xs text-muted-foreground">
+              A brief description displayed on your homepage
+            </p>
           </div>
           
           <DialogFooter>

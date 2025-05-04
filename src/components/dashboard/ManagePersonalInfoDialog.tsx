@@ -24,6 +24,7 @@ interface PersonalInfo {
   email: string | null;
   available_for: string[] | null;
   phone: string | null;
+  whatsapp: string | null;
   website: string | null;
   github: string | null;
   linkedin: string | null;
@@ -45,6 +46,7 @@ const personalInfoSchema = z.object({
   email: z.string().email("Invalid email format").min(1, "Email is required"),
   available_for: z.array(z.string()).min(1, "Select at least one option"),
   phone: z.string().nullable().optional(),
+  whatsapp: z.string().nullable().optional(),
   website: z.string().nullable().optional(),
   github: z.string().nullable().optional(),
   linkedin: z.string().nullable().optional(),
@@ -65,6 +67,7 @@ const ManagePersonalInfoDialog = ({ open, onOpenChange }: ManagePersonalInfoDial
       email: "",
       available_for: [], // Initialize with empty array
       phone: "",
+      whatsapp: "",
       website: "",
       github: "",
       linkedin: "",
@@ -104,6 +107,7 @@ const ManagePersonalInfoDialog = ({ open, onOpenChange }: ManagePersonalInfoDial
           email: data.email || "",
           available_for: availableFor,
           phone: data.phone || "",
+          whatsapp: data.whatsapp || "",
           website: data.website || "",
           github: data.github || "",
           linkedin: data.linkedin || "",
@@ -270,6 +274,29 @@ const ManagePersonalInfoDialog = ({ open, onOpenChange }: ManagePersonalInfoDial
               
               <FormField
                 control={form.control}
+                name="whatsapp"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>WhatsApp (Optional)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="+1234567890" 
+                        {...field} 
+                        value={field.value || ''} 
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Use international format without spaces
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <FormField
+                control={form.control}
                 name="website"
                 render={({ field }) => (
                   <FormItem>
@@ -281,9 +308,7 @@ const ManagePersonalInfoDialog = ({ open, onOpenChange }: ManagePersonalInfoDial
                   </FormItem>
                 )}
               />
-            </div>
-            
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              
               <FormField
                 control={form.control}
                 name="github"
