@@ -126,7 +126,7 @@ const Footer = () => {
             <Link to="/skills" className="text-sm text-muted-foreground hover:text-primary transition-colors">Skills</Link>
             <Link to="/about" className="text-sm text-muted-foreground hover:text-primary transition-colors">About</Link>
             <Link to="/contact" className="text-sm text-muted-foreground hover:text-primary transition-colors">Contact</Link>
-            <Link to="/login" className="text-sm text-muted-foreground hover:text-primary transition-colors">Login</Link>
+            {/* <Link to="/login" className="text-sm text-muted-foreground hover:text-primary transition-colors">Login</Link> */}
           </div>
         </div>
         <div className="flex flex-col">
