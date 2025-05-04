@@ -14,6 +14,7 @@ interface Skill {
   description: string | null;
   projects: number | null;
   years: number | null;
+  image_url: string | null;
 }
 
 const certifications = [
@@ -39,7 +40,7 @@ const Skills = () => {
       try {
         const { data, error } = await supabase
           .from('skills')
-          .select('id, name, category, proficiency, description, projects, years')
+          .select('id, name, category, proficiency, description, projects, years, image_url')
           .order('category', { ascending: true })
           .order('proficiency', { ascending: false });
 
@@ -113,19 +114,19 @@ const Skills = () => {
         ) : skillsData.length === 0 ? (
           <div className="flex justify-center py-12 text-muted-foreground">No skills found.</div>
         ) : (
-          <div className="force-visible">
+          <div>
             <Tabs 
               value={currentTab} 
               onValueChange={setCurrentTab}
-              className="mb-16 force-visible" 
+              className="mb-16" 
               defaultValue={skillsData[0]?.id}
             >
-              <TabsList className="mb-8 flex justify-center bg-secondary/30 p-1 w-full max-w-md mx-auto force-visible">
+              <TabsList className="mb-8 flex justify-center bg-secondary/30 p-1 w-full max-w-md mx-auto">
                 {skillsData.map((category) => (
                   <TabsTrigger
                     key={category.id}
                     value={category.id}
-                    className="flex-1 force-visible"
+                    className="flex-1"
                   >
                     {category.name}
                   </TabsTrigger>
@@ -136,12 +137,10 @@ const Skills = () => {
                 <TabsContent
                   key={category.id}
                   value={category.id}
-                  className="force-visible"
-                  style={{ opacity: 1, visibility: 'visible', display: category.id === currentTab ? 'block' : 'none' }}
                 >
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8 force-visible" style={{ opacity: 1, visibility: 'visible' }}>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     <div className="md:col-span-2">
-                      <Card className="bg-secondary/20 border border-secondary h-full force-visible">
+                      <Card className="bg-secondary/20 border border-secondary h-full">
                         <CardContent className="p-6">
                           <h3 className="text-xl font-semibold mb-6">
                             {category.name} Skills
@@ -150,18 +149,27 @@ const Skills = () => {
                             {category.skills.map((skill) => (
                               <div
                                 key={skill.id}
-                                className="cursor-pointer force-visible"
+                                className="cursor-pointer"
                                 onClick={() => setActiveSkill(skill === activeSkill ? null : skill)}
-                                style={{ opacity: 1, visibility: 'visible' }}
                               >
                                 <div className="flex justify-between mb-1">
-                                  <span className="font-medium">{skill.name}</span>
+                                  <div className="flex items-center gap-2">
+                                    {skill.image_url && (
+                                      <div className="h-6 w-6 rounded overflow-hidden bg-muted flex-shrink-0">
+                                        <img 
+                                          src={skill.image_url} 
+                                          alt={skill.name}
+                                          className="h-full w-full object-contain" 
+                                        />
+                                      </div>
+                                    )}
+                                    <span className="font-medium">{skill.name}</span>
+                                  </div>
                                   <span>{skill.proficiency}%</span>
                                 </div>
                                 <Progress value={skill.proficiency} className="h-2 mb-2" />
                                 <div 
                                   className={`overflow-hidden transition-all duration-300 ${activeSkill?.id === skill.id ? 'max-h-40' : 'max-h-0'}`}
-                                  style={{ opacity: 1, visibility: 'visible' }}
                                 >
                                   {skill.description && (
                                     <p className="text-sm text-muted-foreground mt-2">{skill.description}</p>
@@ -182,7 +190,7 @@ const Skills = () => {
                       </Card>
                     </div>
                     <div>
-                      <Card className="bg-secondary/20 border border-secondary mb-8 force-visible" style={{ opacity: 1, visibility: 'visible' }}>
+                      <Card className="bg-secondary/20 border border-secondary mb-8">
                         <CardContent className="p-6">
                           <h3 className="text-xl font-semibold mb-4">Experience Level</h3>
                           <div className="space-y-2">
@@ -199,8 +207,7 @@ const Skills = () => {
                               <div
                                 className="absolute top-0 left-0 h-full bg-gradient-to-r from-primary to-blue-500"
                                 style={{
-                                  width: `${category.skills.reduce((sum, skill) => sum + skill.proficiency, 0) / (category.skills.length || 1)
-                                    }%`
+                                  width: `${category.skills.reduce((sum, skill) => sum + skill.proficiency, 0) / (category.skills.length || 1)}%`
                                 }}
                               ></div>
                             </div>
@@ -214,7 +221,7 @@ const Skills = () => {
                           </div>
                         </CardContent>
                       </Card>
-                      <Card className="bg-secondary/20 border border-secondary force-visible" style={{ opacity: 1, visibility: 'visible' }}>
+                      <Card className="bg-secondary/20 border border-secondary">
                         <CardContent className="p-6">
                           <h3 className="text-xl font-semibold mb-4">Certifications</h3>
                           <ul className="space-y-2">
@@ -236,9 +243,9 @@ const Skills = () => {
         )}
 
         {!loading && !error && skills.length > 0 && (
-          <div className="bg-secondary/20 border border-secondary rounded-lg p-8 force-visible" style={{ opacity: 1, visibility: 'visible' }}>
+          <div className="bg-secondary/20 border border-secondary rounded-lg p-8">
             <h2 className="text-2xl font-semibold mb-6">Skills Cloud</h2>
-            <div className="flex flex-wrap justify-center gap-3 force-visible" style={{ opacity: 1, visibility: 'visible' }}>
+            <div className="flex flex-wrap justify-center gap-3">
               {skills.map((skill) => {
                 const fontSize = skill ? 0.8 + (skill.proficiency / 100) * 0.8 : 1;
                 const opacity = skill ? 0.5 + (skill.proficiency / 100) * 0.5 : 0.75;
@@ -246,13 +253,21 @@ const Skills = () => {
                   <Badge
                     key={skill.id}
                     variant="outline"
-                    className="py-1.5 px-3 force-visible"
+                    className="py-1.5 px-3 flex items-center gap-2"
                     style={{
                       fontSize: `${fontSize}rem`,
-                      opacity: opacity,
-                      visibility: 'visible'
+                      opacity: opacity
                     }}
                   >
+                    {skill.image_url && (
+                      <div className="h-5 w-5 rounded overflow-hidden bg-muted flex-shrink-0">
+                        <img 
+                          src={skill.image_url} 
+                          alt=""
+                          className="h-full w-full object-contain" 
+                        />
+                      </div>
+                    )}
                     {skill.name}
                   </Badge>
                 );
