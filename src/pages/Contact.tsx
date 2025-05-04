@@ -308,20 +308,7 @@ const Contact = () => {
               </CardContent>
             </Card>
             
-            {personalInfo.location && (
-              <div className="mt-8 bg-secondary/20 border border-secondary rounded-lg aspect-video">
-                <iframe 
-                  src={`https://www.google.com/maps/embed/v1/place?key=YOUR_API_KEY&q=${encodeURIComponent(personalInfo.location)}`}
-                  width="100%" 
-                  height="100%" 
-                  style={{ border: 0 }} 
-                  allowFullScreen={true} 
-                  loading="lazy" 
-                  referrerPolicy="no-referrer-when-downgrade"
-                  title="Map"
-                ></iframe>
-              </div>
-            )}
+            {/* Removing the map section */}
           </div>
         </div>
       </div>

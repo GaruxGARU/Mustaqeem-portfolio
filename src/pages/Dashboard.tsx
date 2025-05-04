@@ -7,12 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { 
-  BarChart3, 
-  UserCircle, 
-  Briefcase, 
-  GraduationCap, 
-  Code2, 
+import {
+  BarChart3,
+  UserCircle,
+  Briefcase,
+  GraduationCap,
+  Code2,
   MessageSquare,
   BookOpen,
   Globe,
@@ -63,14 +63,14 @@ interface DashboardCardProps {
   color?: "default" | "primary" | "success" | "warning" | "danger";
 }
 
-const DashboardCard = ({ 
-  title, 
-  value, 
-  icon, 
-  trend = 0, 
-  description, 
+const DashboardCard = ({
+  title,
+  value,
+  icon,
+  trend = 0,
+  description,
   isLoading = false,
-  color = "default" 
+  color = "default"
 }: DashboardCardProps) => {
   const getColorClasses = () => {
     switch (color) {
@@ -151,7 +151,7 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const navigate = useNavigate();
   const { toast } = useToast();
-  
+
   const [messages, setMessages] = useState<ContactMessage[]>([]);
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState<ContactMessage | null>(null);
@@ -164,7 +164,7 @@ const Dashboard = () => {
     linkedin: null
   });
   const [personalInfoLoading, setPersonalInfoLoading] = useState(false);
-  
+
   // Mock stats data (in a real app, this would come from an API)
   const stats = {
     projects: 3,
@@ -172,7 +172,7 @@ const Dashboard = () => {
     messages: messages.filter(m => !m.read).length,
     visitors: 215
   };
-  
+
   // Dialog state
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [isManageProjectsOpen, setIsManageProjectsOpen] = useState(false);
@@ -225,7 +225,7 @@ const Dashboard = () => {
         .from('personal_info')
         .select('email, phone, whatsapp, location, github, linkedin')
         .single();
-      
+
       if (error && error.code !== 'PGRST116') {
         console.error("Error fetching personal info:", error);
       } else if (data) {
@@ -257,7 +257,7 @@ const Dashboard = () => {
       }
 
       // Update local state
-      setMessages(messages.map(message => 
+      setMessages(messages.map(message =>
         message.id === id ? { ...message, read: !currentStatus } : message
       ));
 
@@ -318,7 +318,7 @@ const Dashboard = () => {
 
   const selectMessage = (message: ContactMessage) => {
     setSelectedMessage(message);
-    
+
     // Mark as read if it's unread
     if (!message.read) {
       toggleReadStatus(message.id, false);
@@ -413,22 +413,22 @@ const Dashboard = () => {
           <ScrollArea className="flex-1">
             <div className="p-2">
               <div className="space-y-1 py-2">
-                <Button 
-                  onClick={() => setActiveTab("overview")} 
+                <Button
+                  onClick={() => setActiveTab("overview")}
                   variant={activeTab === "overview" ? "secondary" : "ghost"}
                   className="w-full justify-start gap-2 font-normal"
                 >
                   <Home className="h-4 w-4" /> Overview
                 </Button>
-                <Button 
-                  onClick={() => setActiveTab("manage")} 
+                <Button
+                  onClick={() => setActiveTab("manage")}
                   variant={activeTab === "manage" ? "secondary" : "ghost"}
                   className="w-full justify-start gap-2 font-normal"
                 >
                   <Settings className="h-4 w-4" /> Manage Content
                 </Button>
-                <Button 
-                  onClick={() => setActiveTab("messages")} 
+                <Button
+                  onClick={() => setActiveTab("messages")}
                   variant={activeTab === "messages" ? "secondary" : "ghost"}
                   className="w-full justify-start gap-2 font-normal"
                 >
@@ -437,32 +437,32 @@ const Dashboard = () => {
                     <Badge variant="secondary" className="ml-auto">{stats.messages}</Badge>
                   )}
                 </Button>
-                <Button 
-                  onClick={() => setActiveTab("analytics")} 
+                <Button
+                  onClick={() => setActiveTab("analytics")}
                   variant={activeTab === "analytics" ? "secondary" : "ghost"}
                   className="w-full justify-start gap-2 font-normal"
                 >
                   <LineChart className="h-4 w-4" /> Analytics
                 </Button>
-                <Button 
-                  onClick={goToHomePage} 
+                <Button
+                  onClick={goToHomePage}
                   variant="ghost"
                   className="w-full justify-start gap-2 font-normal"
                 >
                   <ExternalLink className="h-4 w-4" /> View Portfolio
                 </Button>
               </div>
-              
+
               <Separator className="my-4" />
-              
+
               <div className="space-y-1 py-2">
                 <p className="text-xs font-medium text-muted-foreground px-2 py-1.5">USER</p>
                 <div className="px-2 py-2 rounded-md bg-accent/50">
                   <p className="text-sm font-medium">{user?.email}</p>
                   <p className="text-xs text-muted-foreground">Admin</p>
                 </div>
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   className="w-full justify-start gap-2 font-normal mt-2 text-red-500 hover:text-red-600 hover:bg-red-50"
                   onClick={signOut}
                 >
@@ -518,30 +518,30 @@ const Dashboard = () => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <DashboardCard 
-                  title="Total Projects" 
-                  value={stats.projects} 
+                <DashboardCard
+                  title="Total Projects"
+                  value={stats.projects}
                   icon={<Code2 className="h-5 w-5" />}
                   trend={12}
                   color="primary"
                 />
-                <DashboardCard 
-                  title="Skills Listed" 
-                  value={stats.skills} 
+                <DashboardCard
+                  title="Skills Listed"
+                  value={stats.skills}
                   icon={<BarChart3 className="h-5 w-5" />}
                   trend={5}
                   color="success"
                 />
-                <DashboardCard 
-                  title="Unread Messages" 
-                  value={stats.messages} 
+                <DashboardCard
+                  title="Unread Messages"
+                  value={stats.messages}
                   icon={<MessageSquare className="h-5 w-5" />}
                   description="From contact form"
                   color="warning"
                 />
-                <DashboardCard 
-                  title="Portfolio Visitors" 
-                  value={stats.visitors} 
+                <DashboardCard
+                  title="Portfolio Visitors"
+                  value={stats.visitors}
                   icon={<Users className="h-5 w-5" />}
                   description="This month"
                   trend={18}
@@ -585,7 +585,7 @@ const Dashboard = () => {
                     </div>
                   </CardContent>
                 </Card>
-                
+
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-lg">Content Overview</CardTitle>
@@ -653,9 +653,9 @@ const Dashboard = () => {
                       </CardDescription>
                     </CardHeader>
                     <CardFooter className="pt-2 border-t">
-                      <Button 
-                        onClick={item.onClick} 
-                        variant="ghost" 
+                      <Button
+                        onClick={item.onClick}
+                        variant="ghost"
                         className="w-full justify-between"
                         size="sm"
                       >
@@ -667,7 +667,7 @@ const Dashboard = () => {
                 ))}
               </div>
             </TabsContent>
-            
+
             {/* Content Management Tab */}
             <TabsContent value="manage" className="p-6 focus-visible:outline-none focus-visible:ring-0">
               <div className="flex justify-between items-center">
@@ -691,9 +691,9 @@ const Dashboard = () => {
                       </div>
                     </CardHeader>
                     <CardFooter className="pt-0">
-                      <Button 
-                        onClick={item.onClick} 
-                        variant="default" 
+                      <Button
+                        onClick={item.onClick}
+                        variant="default"
                         className="w-full"
                       >
                         Manage {item.name}
@@ -717,7 +717,7 @@ const Dashboard = () => {
                       )}
                     </h2>
                   </div>
-                  
+
                   <div className="flex-1 overflow-y-auto">
                     {messagesLoading ? (
                       <div className="flex justify-center items-center h-32">
@@ -730,7 +730,7 @@ const Dashboard = () => {
                     ) : (
                       <div className="divide-y">
                         {messages.map((message) => (
-                          <div 
+                          <div
                             key={message.id}
                             onClick={() => selectMessage(message)}
                             className={`p-4 cursor-pointer hover:bg-muted/50 transition-colors
@@ -775,12 +775,12 @@ const Dashboard = () => {
                           >
                             {selectedMessage.read ? (
                               <>
-                                <AlertCircle className="h-4 w-4 mr-2" /> 
+                                <AlertCircle className="h-4 w-4 mr-2" />
                                 Mark as Unread
                               </>
                             ) : (
                               <>
-                                <CheckCheck className="h-4 w-4 mr-2" /> 
+                                <CheckCheck className="h-4 w-4 mr-2" />
                                 Mark as Read
                               </>
                             )}
@@ -811,7 +811,7 @@ const Dashboard = () => {
                               <p className="text-sm text-green-700 mb-3">
                                 {selectedMessage.whatsapp}
                               </p>
-                              <a 
+                              <a
                                 href={`https://wa.me/${selectedMessage.whatsapp.replace(/\D/g, "")}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
@@ -824,26 +824,26 @@ const Dashboard = () => {
                               </a>
                             </div>
                           )}
-                          
+
                           {selectedMessage.email && (
                             <div className="p-4 bg-blue-50 rounded-md border border-blue-200">
                               <h4 className="text-sm font-medium text-blue-800 mb-2">Email Contact</h4>
                               <p className="text-sm text-blue-700 mb-3">
                                 {selectedMessage.email}
                               </p>
-                              
+
                               {/* Professional email draft template with signature */}
                               <div className="mb-3 bg-white p-3 rounded border border-blue-100">
                                 <div className="flex justify-between items-center mb-2">
                                   <div className="text-sm font-medium">Professional Email Template</div>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm" 
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
                                     className="text-xs h-7 px-2"
                                     onClick={() => {
                                       // Get user's name from personal info (fallback to a generic name)
                                       const userName = user?.user_metadata?.full_name || "Mustaqeem";
-                                      
+
                                       // Create professional draft text with signature
                                       const subject = `Re: ${selectedMessage.subject || 'Your message'}`;
                                       const signature = `
@@ -855,7 +855,7 @@ ${personalInfo.phone || ""}
 ${personalInfo.location || ""}
 ${personalInfo.linkedin ? `LinkedIn: ${personalInfo.linkedin.startsWith('http') ? personalInfo.linkedin : `https://linkedin.com/in/${personalInfo.linkedin}`}` : ""}
 `;
-                                      
+
                                       const body = `Dear ${selectedMessage.name},
 
 [Your professional response here]
@@ -870,7 +870,7 @@ Subject: ${selectedMessage.subject || 'Your message'}
 From: ${selectedMessage.name} <${selectedMessage.email}>
 Message:
 ${selectedMessage.message}`;
-                                      
+
                                       // Copy to clipboard
                                       navigator.clipboard.writeText(body);
                                       toast({
@@ -889,11 +889,11 @@ ${selectedMessage.message}`;
                                 </div>
                                 <div className="text-xs whitespace-pre-wrap border-t pt-2 text-muted-foreground">
                                   <p className="mb-2">Dear {selectedMessage.name},</p>
-                                  
+
                                   <p className="mb-4 text-blue-600 italic">[Your professional response here]</p>
-                                  
+
                                   <p className="mb-4">Thank you for reaching out. I appreciate your interest and will address your inquiry promptly.</p>
-                                  
+
                                   <div className="border-t pt-2 mb-4">
                                     <p className="font-medium mb-1">Best regards,</p>
                                     <p className="mb-0">{user?.user_metadata?.full_name || "Mustaqeem"}</p>
@@ -901,13 +901,13 @@ ${selectedMessage.message}`;
                                     {personalInfo.phone && <p className="mb-0">{personalInfo.phone}</p>}
                                     {personalInfo.location && <p className="mb-0">{personalInfo.location}</p>}
                                     {personalInfo.linkedin && (
-                                      <p className="mb-0">LinkedIn: {personalInfo.linkedin.startsWith('http') ? 
-                                        personalInfo.linkedin : 
+                                      <p className="mb-0">LinkedIn: {personalInfo.linkedin.startsWith('http') ?
+                                        personalInfo.linkedin :
                                         `https://linkedin.com/in/${personalInfo.linkedin}`}
                                       </p>
                                     )}
                                   </div>
-                                  
+
                                   <div className="border-t border-dashed pt-2 text-gray-500">
                                     <p className="font-medium mb-1">Original message:</p>
                                     <p className="mb-0"><strong>Subject:</strong> {selectedMessage.subject || 'Your message'}</p>
@@ -917,15 +917,15 @@ ${selectedMessage.message}`;
                                   </div>
                                 </div>
                               </div>
-                              
-                              <Button 
-                                variant="default" 
-                                size="sm" 
+
+                              <Button
+                                variant="default"
+                                size="sm"
                                 className="bg-blue-600 hover:bg-blue-700"
                                 onClick={() => {
                                   // Get user's name from personal info (fallback to a generic name)
                                   const userName = user?.user_metadata?.full_name || "Mustaqeem";
-                                  
+
                                   // Create signature
                                   const signature = `
 Best regards,
@@ -951,7 +951,7 @@ Subject: ${selectedMessage.subject || 'Your message'}
 From: ${selectedMessage.name} <${selectedMessage.email}>
 Message:
 ${selectedMessage.message}`;
-                                  
+
                                   window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(selectedMessage.email)}&su=${encodeURIComponent(`Re: ${selectedMessage.subject || 'Your message'}`)}&body=${encodeURIComponent(body)}`, '_blank');
                                 }}
                               >
@@ -963,7 +963,7 @@ ${selectedMessage.message}`;
                               </Button>
                             </div>
                           )}
-                          
+
                           {!selectedMessage.email && !selectedMessage.whatsapp && (
                             <div className="p-4 bg-amber-50 rounded-md border border-amber-200">
                               <h4 className="text-sm font-medium text-amber-800 mb-2">No Contact Method Provided</h4>
@@ -993,17 +993,17 @@ ${selectedMessage.message}`;
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <DashboardCard 
-                  title="Portfolio Visitors" 
-                  value={stats.visitors} 
+                <DashboardCard
+                  title="Portfolio Visitors"
+                  value={stats.visitors}
                   icon={<Users className="h-5 w-5" />}
                   description="This month"
                   trend={18}
                   color="success"
                 />
-                <DashboardCard 
-                  title="Average Time on Site" 
-                  value="2m 45s" 
+                <DashboardCard
+                  title="Average Time on Site"
+                  value="2m 45s"
                   icon={<Clock className="h-5 w-5" />}
                   description="Per visit"
                   trend={-3}
@@ -1026,36 +1026,36 @@ ${selectedMessage.message}`;
       </div>
 
       {/* Dialogs */}
-      <EditProfileDialog 
-        open={isEditProfileOpen} 
-        onOpenChange={setIsEditProfileOpen} 
+      <EditProfileDialog
+        open={isEditProfileOpen}
+        onOpenChange={setIsEditProfileOpen}
       />
-      
+
       <ManagePersonalInfoDialog
         open={isManagePersonalInfoOpen}
         onOpenChange={setIsManagePersonalInfoOpen}
       />
-      
+
       <ManageLanguagesDialog
         open={isManageLanguagesOpen}
         onOpenChange={setIsManageLanguagesOpen}
       />
-      
-      <ManageProjectsDialog 
-        open={isManageProjectsOpen} 
-        onOpenChange={setIsManageProjectsOpen} 
+
+      <ManageProjectsDialog
+        open={isManageProjectsOpen}
+        onOpenChange={setIsManageProjectsOpen}
       />
-      
-      <ManageSkillsDialog 
-        open={isManageSkillsOpen} 
-        onOpenChange={setIsManageSkillsOpen} 
+
+      <ManageSkillsDialog
+        open={isManageSkillsOpen}
+        onOpenChange={setIsManageSkillsOpen}
       />
-      
+
       <ManageWorkExperienceDialog
         open={isManageWorkExperienceOpen}
         onOpenChange={setIsManageWorkExperienceOpen}
       />
-      
+
       <ManageEducationDialog
         open={isManageEducationOpen}
         onOpenChange={setIsManageEducationOpen}
@@ -1065,7 +1065,7 @@ ${selectedMessage.message}`;
         open={isManageHobbiesOpen}
         onOpenChange={setIsManageHobbiesOpen}
       />
-      
+
       <ManageJourneyDialog
         open={isManageJourneyOpen}
         onOpenChange={setIsManageJourneyOpen}
