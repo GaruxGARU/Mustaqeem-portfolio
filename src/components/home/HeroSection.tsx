@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Code, Github } from 'lucide-react';
+import { ArrowRight, Github } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface PersonalInfo {
   github: string | null;
@@ -13,6 +14,7 @@ interface ProfileData {
   bio: string | null;
   headline: string | null;
   description: string | null;
+  avatar_url: string | null;
 }
 
 const HeroSection = () => {
@@ -20,6 +22,7 @@ const HeroSection = () => {
   const [profileBio, setProfileBio] = useState(''); // Default value
   const [profileHeadline, setProfileHeadline] = useState('');
   const [profileDescription, setProfileDescription] = useState('');
+  const [profileAvatar, setProfileAvatar] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [personalInfo, setPersonalInfo] = useState<PersonalInfo>({ github: null });
 
@@ -31,7 +34,7 @@ const HeroSection = () => {
         // Fetch profile data
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
-          .select('name, bio, headline, description')
+          .select('name, bio, headline, description, avatar_url')
           .single();
         
         if (profileError && profileError.code !== 'PGRST116') {
@@ -50,6 +53,10 @@ const HeroSection = () => {
           
           if (profileData.description && profileData.description.trim() !== '') {
             setProfileDescription(profileData.description);
+          }
+
+          if (profileData.avatar_url) {
+            setProfileAvatar(profileData.avatar_url);
           }
         }
 
@@ -87,6 +94,17 @@ const HeroSection = () => {
   // Get display name - show blank while loading
   const displayName = isLoading ? '' : profileName;
 
+  // Get initials for avatar fallback
+  const getInitials = () => {
+    if (!profileName) return "?";
+    return profileName
+      .split(' ')
+      .map(name => name[0])
+      .join('')
+      .toUpperCase()
+      .substring(0, 2);
+  };
+
   return (
     <div className="container py-20 md:py-32">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
@@ -123,33 +141,14 @@ const HeroSection = () => {
           </div>
         </div>
         <div className="flex justify-center md:justify-end relative">
-          <div className="relative bg-secondary/30 rounded-xl p-4 w-full max-w-lg aspect-square">
-            <div className="absolute top-0 left-0 h-24 w-24 -translate-x-1/4 -translate-y-1/4 bg-primary opacity-50 rounded-full blur-3xl"></div>
-            <div className="absolute bottom-0 right-0 h-40 w-40 translate-x-1/4 translate-y-1/4 bg-blue-500 opacity-40 rounded-full blur-3xl"></div>
-            
-            <div className="absolute inset-0 bg-secondary/70 backdrop-blur-sm rounded-xl p-6 flex flex-col overflow-hidden">
-              <div className="flex items-center mb-4 gap-2">
-                <div className="h-3 w-3 bg-red-500 rounded-full"></div>
-                <div className="h-3 w-3 bg-yellow-500 rounded-full"></div>
-                <div className="h-3 w-3 bg-green-500 rounded-full"></div>
-                <div className="ml-4 text-xs text-muted-foreground font-mono">terminal</div>
-              </div>
-              
-              <div className="font-mono text-sm text-primary/90">
-                <span className="text-muted-foreground">$</span> <span className="typing-animation inline-block">npm create portfolio@latest</span>
-                <div className="mt-2">
-                  <span className="text-green-400">✓</span> Installing dependencies...
-                </div>
-                <div className="mt-2">
-                  <span className="text-green-400">✓</span> Setting up project...
-                </div>
-                <div className="mt-2 animate-pulse">
-                  <span className="text-muted-foreground">$</span> <span className="text-primary/90">_</span>
-                </div>
-
-                <div className="absolute bottom-6 right-6">
-                  <Code className="h-20 w-20 text-primary/20 animate-spin-slow" />
-                </div>
+          <div className="relative rounded-xl p-2 md:p-4 w-full max-w-lg aspect-square shadow-lg border border-secondary/20 overflow-hidden">
+            {/* Profile Picture */}
+            <div className="w-full h-full relative z-10 flex items-center justify-center" id="sun-target-area">
+              <div className="animate-float">
+          <Avatar className="w-64 h-64 border-4 border-primary/20 shadow-xl">
+            <AvatarImage src={profileAvatar} alt={profileName} />
+            <AvatarFallback className="text-6xl bg-secondary/50">{getInitials()}</AvatarFallback>
+          </Avatar>
               </div>
             </div>
           </div>

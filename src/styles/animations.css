@@ -11,6 +11,23 @@
   transform: translateY(0);
 }
 
+/* Floating animation for profile picture */
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-15px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
 /* Override for elements that need to be visible by default */
 .force-visible {
   opacity: 1 !important;
