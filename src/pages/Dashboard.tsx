@@ -13,6 +13,7 @@ import ManagePersonalInfoDialog from '@/components/dashboard/ManagePersonalInfoD
 import ManageLanguagesDialog from '@/components/dashboard/ManageLanguagesDialog';
 import ManageHobbiesDialog from '@/components/dashboard/ManageHobbiesDialog';
 import ManageJourneyDialog from '@/components/dashboard/ManageJourneyDialog';
+import ManageContactMessagesDialog from '@/components/dashboard/ManageContactMessagesDialog';
 
 const Dashboard = () => {
   const { user, loading, signOut } = useAuth();
@@ -25,6 +26,7 @@ const Dashboard = () => {
   const [isManageLanguagesOpen, setIsManageLanguagesOpen] = useState(false);
   const [isManageHobbiesOpen, setIsManageHobbiesOpen] = useState(false);
   const [isManageJourneyOpen, setIsManageJourneyOpen] = useState(false);
+  const [isManageContactMessagesOpen, setIsManageContactMessagesOpen] = useState(false);
 
   // Redirect to login if not authenticated
   if (!loading && !user) {
@@ -200,6 +202,23 @@ const Dashboard = () => {
                   </Button>
                 </CardContent>
               </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Contact Messages</CardTitle>
+                  <CardDescription>View messages from visitors</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="mb-4">Manage messages sent through your contact form</p>
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => setIsManageContactMessagesOpen(true)}
+                  >
+                    View Messages
+                  </Button>
+                </CardContent>
+              </Card>
             </div>
           </>
         )}
@@ -248,6 +267,11 @@ const Dashboard = () => {
         <ManageJourneyDialog
           open={isManageJourneyOpen}
           onOpenChange={setIsManageJourneyOpen}
+        />
+
+        <ManageContactMessagesDialog
+          open={isManageContactMessagesOpen}
+          onOpenChange={setIsManageContactMessagesOpen}
         />
       </div>
     </Layout>

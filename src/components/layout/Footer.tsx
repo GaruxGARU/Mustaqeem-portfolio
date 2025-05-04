@@ -36,16 +36,15 @@ const Footer = () => {
           setProfileName(profileData.name);
         }
 
-        // Fetch personal info using "any" to bypass type checking
+        // Fetch personal info from the personal_info table
         const { data: personalInfoData, error: personalInfoError } = await supabase
-          .from('personal_info' as any)
-          .select('email, phone, github, linkedin' as any)
+          .from('personal_info')
+          .select('email, phone, github, linkedin')
           .single();
         
         if (personalInfoError && personalInfoError.code !== 'PGRST116') {
           console.error("Error fetching personal info:", personalInfoError);
         } else if (personalInfoData) {
-          // Cast the data to our interface
           setPersonalInfo({
             email: personalInfoData.email || null,
             phone: personalInfoData.phone || null,
@@ -126,7 +125,6 @@ const Footer = () => {
             <Link to="/skills" className="text-sm text-muted-foreground hover:text-primary transition-colors">Skills</Link>
             <Link to="/about" className="text-sm text-muted-foreground hover:text-primary transition-colors">About</Link>
             <Link to="/contact" className="text-sm text-muted-foreground hover:text-primary transition-colors">Contact</Link>
-            {/* <Link to="/login" className="text-sm text-muted-foreground hover:text-primary transition-colors">Login</Link> */}
           </div>
         </div>
         <div className="flex flex-col">
