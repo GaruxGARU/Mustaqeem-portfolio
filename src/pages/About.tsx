@@ -3,15 +3,22 @@ import Layout from '@/components/layout/Layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CircleUser, Book, Briefcase, Code, FolderGit2 } from 'lucide-react';
+import { CircleUser, Book, Briefcase, Code, FolderGit2, Globe } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { format } from 'date-fns';
 
 interface TimelineItem {
   id: string;
   title: string;
-  organization: string;
-  period: string;
+  organization?: string;
+  company_name?: string;
+  position?: string;
+  period?: string;
+  start_date: string;
+  end_date: string | null;
+  current: boolean;
   description: string;
+  location?: string | null;
   tags: string[];
   created_at?: string;
   updated_at?: string;
@@ -40,11 +47,37 @@ interface Project {
   updated_at: string;
 }
 
+interface PersonalInfo {
+  id: string;
+  full_name: string | null;
+  location: string | null;
+  email: string | null;
+  available_for: string[] | null;
+  phone: string | null;
+  website: string | null;
+  github: string | null;
+  linkedin: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface Language {
+  id: string;
+  user_id: string;
+  language: string;
+  proficiency: string;
+  is_native: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 const About = () => {
   const [skills, setSkills] = useState<Skill[]>([]);
   const [featuredProjects, setFeaturedProjects] = useState<Project[]>([]);
   const [workExperience, setWorkExperience] = useState<TimelineItem[]>([]);
   const [education, setEducation] = useState<TimelineItem[]>([]);
+  const [personalInfo, setPersonalInfo] = useState<PersonalInfo | null>(null);
+  const [languages, setLanguages] = useState<Language[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -72,21 +105,38 @@ const About = () => {
 
         if (projectsError) throw new Error(projectsError.message);
         
-        // Fetch work experience
+        // Fetch work experience - first get all items, then sort them manually
         const { data: workData, error: workError } = await supabase
           .from('work_experience')
-          .select('id, title, organization, period, description, tags, created_at, updated_at')
-          .order('created_at', { ascending: false });
+          .select('id, title, company_name, position, start_date, end_date, current, description, location, tags, created_at, updated_at');
           
         if (workError) throw new Error(workError.message);
         
-        // Fetch education
+        // Fetch education - first get all items, then sort them manually
         const { data: educationData, error: educationError } = await supabase
           .from('education')
-          .select('id, title, organization, period, description, tags, created_at, updated_at')
-          .order('created_at', { ascending: false });
+          .select('id, title, institution_name, organization, start_date, end_date, current, description, location, tags, created_at, updated_at');
           
         if (educationError) throw new Error(educationError.message);
+        
+        // Fetch personal info
+        const { data: personalInfoData, error: personalInfoError } = await supabase
+          .from('personal_info')
+          .select('*')
+          .single();
+          
+        if (personalInfoError && personalInfoError.code !== 'PGRST116') {
+          // PGRST116 means no rows returned, which is fine - just means no personal info yet
+          throw new Error(personalInfoError.message);
+        }
+        
+        // Fetch languages
+        const { data: languagesData, error: languagesError } = await supabase
+          .from('languages')
+          .select('*')
+          .order('is_native', { ascending: false });
+          
+        if (languagesError) throw new Error(languagesError.message);
 
         setSkills(skillsData as Skill[]);
         
@@ -97,19 +147,39 @@ const About = () => {
         
         setFeaturedProjects(processedProjectsData);
         
+        // Process work data and sort: current positions first, then by start_date descending
         const processedWorkData = ((workData ?? []) as TimelineItem[]).map(w => ({
           ...w,
           tags: Array.isArray(w.tags) ? w.tags : [],
-        }));
+        })).sort((a, b) => {
+          // First sort by current (true comes before false)
+          if (a.current && !b.current) return -1;
+          if (!a.current && b.current) return 1;
+          
+          // Then sort by start_date (newest first)
+          return new Date(b.start_date).getTime() - new Date(a.start_date).getTime();
+        });
         
         setWorkExperience(processedWorkData);
         
+        // Process education data and sort: current first, then by start_date descending
         const processedEducationData = ((educationData ?? []) as TimelineItem[]).map(e => ({
           ...e,
           tags: Array.isArray(e.tags) ? e.tags : [],
-        }));
+        })).sort((a, b) => {
+          // First sort by current (true comes before false)
+          if (a.current && !b.current) return -1;
+          if (!a.current && b.current) return 1;
+          
+          // Then sort by start_date (newest first)
+          return new Date(b.start_date).getTime() - new Date(a.start_date).getTime();
+        });
         
         setEducation(processedEducationData);
+        
+        // Set personal info and languages
+        setPersonalInfo(personalInfoData as PersonalInfo);
+        setLanguages(languagesData as Language[]);
       } catch (err) {
         console.error("Error fetching data:", err);
         setError('Failed to load data');
@@ -155,12 +225,65 @@ const About = () => {
                     <CircleUser className="h-5 w-5 text-primary" />
                     Personal Info
                   </h2>
-                  <div className="space-y-2 text-sm">
-                    <p><span className="text-muted-foreground">Name:</span> John Developer</p>
-                    <p><span className="text-muted-foreground">Location:</span> San Francisco, CA</p>
-                    <p><span className="text-muted-foreground">Email:</span> contact@example.com</p>
-                    <p><span className="text-muted-foreground">Available for:</span> Freelance, Full-time</p>
-                  </div>
+                  {loading ? (
+                    <p className="text-sm text-muted-foreground">Loading personal info...</p>
+                  ) : error ? (
+                    <p className="text-sm text-destructive">Error loading personal info</p>
+                  ) : (
+                    <div className="space-y-2 text-sm">
+                      <p><span className="text-muted-foreground">Name:</span> {personalInfo?.full_name || 'N/A'}</p>
+                      <p><span className="text-muted-foreground">Location:</span> {personalInfo?.location || 'N/A'}</p>
+                      <p><span className="text-muted-foreground">Email:</span> {personalInfo?.email || 'N/A'}</p>
+                      <p><span className="text-muted-foreground">Phone:</span> {personalInfo?.phone || 'N/A'}</p>
+                      {personalInfo?.available_for && personalInfo.available_for.length > 0 && (
+                        <p>
+                          <span className="text-muted-foreground">Available for:</span>{' '}
+                          {personalInfo.available_for.join(', ')}
+                        </p>
+                      )}
+                      
+                      {/* Social Links */}
+                      {(personalInfo?.website || personalInfo?.github || personalInfo?.linkedin) && (
+                        <div className="pt-2">
+                          <p className="text-muted-foreground mb-2">Social Links:</p>
+                          <div className="flex flex-wrap gap-3">
+                            {personalInfo?.website && (
+                              <a 
+                                href={personalInfo.website.startsWith('http') ? personalInfo.website : `https://${personalInfo.website}`} 
+                                target="_blank" 
+                                rel="noreferrer"
+                                className="text-primary hover:text-primary/80 text-sm flex items-center gap-1"
+                              >
+                                <Globe className="h-4 w-4" /> Website
+                              </a>
+                            )}
+                            {personalInfo?.github && (
+                              <a 
+                                href={personalInfo.github.startsWith('http') ? personalInfo.github : `https://github.com/${personalInfo.github}`} 
+                                target="_blank" 
+                                rel="noreferrer"
+                                className="text-primary hover:text-primary/80 text-sm flex items-center gap-1"
+                              >
+                                <FolderGit2 className="h-4 w-4" /> GitHub
+                              </a>
+                            )}
+                            {personalInfo?.linkedin && (
+                              <a 
+                                href={personalInfo.linkedin.startsWith('http') ? personalInfo.linkedin : `https://linkedin.com/in/${personalInfo.linkedin}`} 
+                                target="_blank" 
+                                rel="noreferrer"
+                                className="text-primary hover:text-primary/80 text-sm flex items-center gap-1"
+                              >
+                                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                  <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                                </svg> LinkedIn
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
                 
                 <div className="animate-on-scroll">
@@ -182,12 +305,31 @@ const About = () => {
                 </div>
                 
                 <div className="animate-on-scroll">
-                  <h2 className="text-xl font-semibold mb-3">Languages</h2>
-                  <div className="space-y-2 text-sm">
-                    <p>English (Native)</p>
-                    <p>Spanish (Professional)</p>
-                    <p>French (Basic)</p>
-                  </div>
+                  <h2 className="text-xl font-semibold mb-3 flex items-center gap-2">
+                    <Globe className="h-5 w-5 text-primary" />
+                    Languages
+                  </h2>
+                  {loading ? (
+                    <p className="text-sm text-muted-foreground">Loading languages...</p>
+                  ) : error ? (
+                    <p className="text-sm text-destructive">Error loading languages</p>
+                  ) : languages.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No languages found</p>
+                  ) : (
+                    <div className="space-y-2 text-sm">
+                      {languages.map((language) => (
+                        <div key={language.id} className="flex items-center justify-between">
+                          <span>
+                            {language.language}
+                            {language.is_native && (
+                              <span className="ml-1 text-xs text-primary">(Native)</span>
+                            )}
+                          </span>
+                          <Badge variant="outline" className="text-xs">{language.proficiency}</Badge>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -250,11 +392,11 @@ const About = () => {
                           <h3 className="text-xl font-medium inline-flex items-center">
                             {item.title}
                             <span className="ml-3 text-sm font-normal text-muted-foreground">
-                              {item.period}
+                              {format(new Date(item.start_date), 'MMM yyyy')} - {item.current ? 'Present' : format(new Date(item.end_date || ''), 'MMM yyyy')}
                             </span>
                           </h3>
                         </div>
-                        <p className="text-primary font-medium mb-3">{item.organization}</p>
+                        <p className="text-primary font-medium mb-3">{item.company_name}</p>
                         <p className="text-sm text-muted-foreground mb-3">{item.description}</p>
                         {item.tags && (
                           <div className="flex flex-wrap gap-2">
@@ -290,7 +432,7 @@ const About = () => {
                           <h3 className="text-xl font-medium inline-flex items-center">
                             {item.title}
                             <span className="ml-3 text-sm font-normal text-muted-foreground">
-                              {item.period}
+                              {format(new Date(item.start_date), 'MMM yyyy')} - {item.current ? 'Present' : format(new Date(item.end_date || ''), 'MMM yyyy')}
                             </span>
                           </h3>
                         </div>

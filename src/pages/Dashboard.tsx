@@ -9,6 +9,8 @@ import ManageProjectsDialog from '@/components/dashboard/ManageProjectsDialog';
 import ManageSkillsDialog from '@/components/dashboard/ManageSkillsDialog';
 import ManageWorkExperienceDialog from '@/components/dashboard/ManageWorkExperienceDialog';
 import ManageEducationDialog from '@/components/dashboard/ManageEducationDialog';
+import ManagePersonalInfoDialog from '@/components/dashboard/ManagePersonalInfoDialog';
+import ManageLanguagesDialog from '@/components/dashboard/ManageLanguagesDialog';
 
 const Dashboard = () => {
   const { user, loading, signOut } = useAuth();
@@ -17,6 +19,8 @@ const Dashboard = () => {
   const [isManageSkillsOpen, setIsManageSkillsOpen] = useState(false);
   const [isManageWorkExperienceOpen, setIsManageWorkExperienceOpen] = useState(false);
   const [isManageEducationOpen, setIsManageEducationOpen] = useState(false);
+  const [isManagePersonalInfoOpen, setIsManagePersonalInfoOpen] = useState(false);
+  const [isManageLanguagesOpen, setIsManageLanguagesOpen] = useState(false);
 
   // Redirect to login if not authenticated
   if (!loading && !user) {
@@ -40,7 +44,7 @@ const Dashboard = () => {
               <Card>
                 <CardHeader>
                   <CardTitle>Your Profile</CardTitle>
-                  <CardDescription>Manage your personal information</CardDescription>
+                  <CardDescription>Manage your profile details</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <p className="mb-4">Email: {user?.email}</p>
@@ -50,6 +54,40 @@ const Dashboard = () => {
                     onClick={() => setIsEditProfileOpen(true)}
                   >
                     Edit Profile
+                  </Button>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle>Personal Details</CardTitle>
+                  <CardDescription>Manage contact and personal details</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="mb-4">Update your location, contact information, and availability</p>
+                  <Button 
+                    variant="outline" 
+                    className="w-full" 
+                    onClick={() => setIsManagePersonalInfoOpen(true)}
+                  >
+                    Manage Personal Info
+                  </Button>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle>Languages</CardTitle>
+                  <CardDescription>Languages you speak</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="mb-4">Add languages and proficiency levels</p>
+                  <Button 
+                    variant="outline" 
+                    className="w-full" 
+                    onClick={() => setIsManageLanguagesOpen(true)}
+                  >
+                    Manage Languages
                   </Button>
                 </CardContent>
               </Card>
@@ -132,6 +170,16 @@ const Dashboard = () => {
         <EditProfileDialog 
           open={isEditProfileOpen} 
           onOpenChange={setIsEditProfileOpen} 
+        />
+        
+        <ManagePersonalInfoDialog
+          open={isManagePersonalInfoOpen}
+          onOpenChange={setIsManagePersonalInfoOpen}
+        />
+        
+        <ManageLanguagesDialog
+          open={isManageLanguagesOpen}
+          onOpenChange={setIsManageLanguagesOpen}
         />
         
         <ManageProjectsDialog 

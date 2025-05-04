@@ -6,10 +6,17 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit, Trash } from 'lucide-react';
+import { Plus, Edit, Trash, CalendarIcon } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
-import { Form, FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form';
+import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Switch } from '@/components/ui/switch';
+import { format } from "date-fns";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 interface ManageEducationDialogProps {
   open: boolean;
@@ -20,39 +27,62 @@ interface Education {
   id: string;
   title: string;
   organization: string;
-  period: string;
+  period?: string;
   description: string;
   tags: string[];
   user_id: string;
   created_at: string;
   updated_at: string;
+  
+  // New fields
+  institution_name?: string;
+  degree?: string;
+  start_date?: string;
+  end_date?: string | null;
+  current?: boolean;
+  location?: string | null;
 }
+
+// Define a schema for form validation
+const educationFormSchema = z.object({
+  title: z.string().min(1, "Degree/Certificate is required"),
+  institution_name: z.string().min(1, "Institution name is required"),
+  start_date: z.string().min(1, "Start date is required"),
+  end_date: z.string().nullable(),
+  current: z.boolean().default(false),
+  description: z.string(),
+  location: z.string().nullable(),
+  tags: z.string()
+});
+
+// Create a type from the schema
+type EducationFormValues = z.infer<typeof educationFormSchema>;
 
 const EducationForm = ({ 
   onSubmit, 
   initialData = null, 
   onCancel 
 }: { 
-  onSubmit: (data: any) => void;
+  onSubmit: (data: EducationFormValues) => void;
   initialData?: Education | null;
   onCancel: () => void;
 }) => {
-  const form = useForm({
-    defaultValues: initialData || {
-      title: '',
-      organization: '',
-      period: '',
-      description: '',
-      tags: ''
+  const form = useForm<EducationFormValues>({
+    resolver: zodResolver(educationFormSchema),
+    defaultValues: {
+      title: initialData?.title || initialData?.degree || '',
+      institution_name: initialData?.institution_name || initialData?.organization || '',
+      start_date: initialData?.start_date || '',
+      end_date: initialData?.end_date || null,
+      current: initialData?.current || false,
+      description: initialData?.description || '',
+      location: initialData?.location || '',
+      tags: initialData?.tags ? initialData.tags.join(', ') : ''
     }
   });
 
-  // Convert tags array to string for form display
-  useEffect(() => {
-    if (initialData && Array.isArray(initialData.tags)) {
-      form.setValue('tags', initialData.tags.join(', '));
-    }
-  }, [initialData, form]);
+  // Watch current value to toggle end_date field
+  const isCurrent = form.watch("current");
 
   return (
     <Form {...form}>
@@ -72,7 +102,7 @@ const EducationForm = ({
 
         <FormField
           control={form.control}
-          name="organization"
+          name="institution_name"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Institution</FormLabel>
@@ -83,14 +113,106 @@ const EducationForm = ({
           )}
         />
 
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="start_date"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Start Date</FormLabel>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full pl-3 text-left font-normal",
+                          !field.value && "text-muted-foreground"
+                        )}
+                      >
+                        {field.value ? format(new Date(field.value), "PPP") : <span>Pick a date</span>}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={field.value ? new Date(field.value) : undefined}
+                      onSelect={(date) => field.onChange(date ? date.toISOString().split('T')[0] : '')}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="end_date"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>End Date</FormLabel>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full pl-3 text-left font-normal",
+                          !field.value && "text-muted-foreground"
+                        )}
+                        disabled={isCurrent}
+                      >
+                        {field.value ? format(new Date(field.value), "PPP") : <span>Pick a date</span>}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={field.value ? new Date(field.value) : undefined}
+                      onSelect={(date) => field.onChange(date ? date.toISOString().split('T')[0] : '')}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </FormItem>
+            )}
+          />
+        </div>
+
         <FormField
           control={form.control}
-          name="period"
+          name="current"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+              <div className="space-y-0.5">
+                <FormLabel>Current Program</FormLabel>
+                <FormDescription>
+                  I'm currently studying here
+                </FormDescription>
+              </div>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="location"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Period</FormLabel>
+              <FormLabel>Location</FormLabel>
               <FormControl>
-                <Input {...field} placeholder="2018 - 2022" />
+                <Input {...field} placeholder="City, Country" />
               </FormControl>
             </FormItem>
           )}
@@ -177,7 +299,7 @@ const ManageEducationDialog = ({ open, onOpenChange }: ManageEducationDialogProp
     }
   };
 
-  const handleCreateEducation = async (data: any) => {
+  const handleCreateEducation = async (data: EducationFormValues) => {
     if (!user) return;
 
     try {
@@ -189,7 +311,15 @@ const ManageEducationDialog = ({ open, onOpenChange }: ManageEducationDialogProp
         : [];
       
       const newEducation = {
-        ...data,
+        title: data.title,
+        institution_name: data.institution_name,
+        organization: data.institution_name, // For backward compatibility
+        degree: data.title, // For backward compatibility
+        start_date: data.start_date,
+        end_date: data.current ? null : data.end_date,
+        current: data.current,
+        description: data.description,
+        location: data.location,
         tags,
         user_id: user.id,
       };
@@ -221,7 +351,7 @@ const ManageEducationDialog = ({ open, onOpenChange }: ManageEducationDialogProp
     }
   };
 
-  const handleUpdateEducation = async (data: any) => {
+  const handleUpdateEducation = async (data: EducationFormValues) => {
     if (!user || !currentEducation) return;
 
     try {
@@ -233,7 +363,15 @@ const ManageEducationDialog = ({ open, onOpenChange }: ManageEducationDialogProp
         : [];
       
       const updates = {
-        ...data,
+        title: data.title,
+        institution_name: data.institution_name,
+        organization: data.institution_name, // For backward compatibility
+        degree: data.title, // For backward compatibility
+        start_date: data.start_date,
+        end_date: data.current ? null : data.end_date,
+        current: data.current,
+        description: data.description,
+        location: data.location, 
         tags,
         updated_at: new Date().toISOString(),
       };
@@ -304,7 +442,7 @@ const ManageEducationDialog = ({ open, onOpenChange }: ManageEducationDialogProp
     }
   };
 
-  const handleSubmit = (data: any) => {
+  const handleSubmit = (data: EducationFormValues) => {
     if (currentEducation) {
       handleUpdateEducation(data);
     } else {
@@ -353,7 +491,7 @@ const ManageEducationDialog = ({ open, onOpenChange }: ManageEducationDialogProp
                       <div className="flex justify-between items-start">
                         <div>
                           <CardTitle className="text-base">{education.title}</CardTitle>
-                          <p className="text-sm text-primary">{education.organization}</p>
+                          <p className="text-sm text-primary">{education.institution_name || education.organization}</p>
                         </div>
                         <div className="flex space-x-1">
                           <Button 
@@ -377,7 +515,10 @@ const ManageEducationDialog = ({ open, onOpenChange }: ManageEducationDialogProp
                       </div>
                     </CardHeader>
                     <CardContent className="py-1">
-                      <p className="text-xs text-muted-foreground">{education.period}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {education.start_date && format(new Date(education.start_date), "PPP")}
+                        {education.end_date ? ` - ${format(new Date(education.end_date), "PPP")}` : education.current ? " - Present" : ""}
+                      </p>
                       <p className="text-sm mt-2 line-clamp-3">{education.description}</p>
                     </CardContent>
                     {education.tags && education.tags.length > 0 && (
