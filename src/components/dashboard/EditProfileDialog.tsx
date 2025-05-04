@@ -20,6 +20,54 @@ interface Profile {
   avatar_url: string | null;
 }
 
+const extractFilePathFromUrl = (url: string): string | null => {
+  try {
+    const parsedUrl = new URL(url);
+    // Extract the path parts after the storage endpoint
+    // Format is typically: https://{instance}.supabase.co/storage/v1/object/public/{bucket}/{file_path}
+    const pathParts = parsedUrl.pathname.split('/');
+    // Look for the bucket name in the path
+    const bucketIndex = pathParts.findIndex(part => part === 'profile_avatars');
+    
+    if (bucketIndex !== -1) {
+      // If bucket name is found, return everything after it
+      return pathParts.slice(bucketIndex + 1).join('/');
+    } else {
+      // If we can't find the bucket name, try the standard approach
+      return pathParts.slice(3).join('/');
+    }
+  } catch (error) {
+    console.error("Failed to extract file path from URL:", error);
+    return null;
+  }
+};
+
+const deleteImageFromStorage = async (imageUrl: string): Promise<boolean> => {
+  if (!imageUrl || !imageUrl.includes('supabase')) return false;
+  
+  try {
+    const filePath = extractFilePathFromUrl(imageUrl);
+    if (!filePath) return false;
+    
+    console.log("Attempting to delete file:", filePath);
+    
+    const { error, data } = await supabase.storage
+      .from('profile_avatars')
+      .remove([filePath]);
+    
+    if (error) {
+      console.error("Error deleting file from storage:", error);
+      return false;
+    }
+    
+    console.log("File deletion result:", data);
+    return true;
+  } catch (error) {
+    console.error("Failed to delete image from storage:", error);
+    return false;
+  }
+};
+
 const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps) => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -120,22 +168,12 @@ const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps) => {
       // Handle avatar upload/deletion
       // If removing existing avatar
       if (removeExistingAvatar && profile?.avatar_url) {
-        try {
-          if (profile.avatar_url.includes('supabase')) {
-            // Extract the file path from the URL
-            const url = new URL(profile.avatar_url);
-            const pathParts = url.pathname.split('/');
-            const filePath = pathParts.slice(3).join('/');
-            
-            // Remove the file from storage
-            await supabase.storage
-              .from('profile_avatars')
-              .remove([filePath]);
-          }
-          
+        const deletionSuccess = await deleteImageFromStorage(profile.avatar_url);
+        if (deletionSuccess) {
+          console.log("Successfully deleted avatar image");
           avatarUrl = null;
-        } catch (error) {
-          console.error("Error removing avatar from storage:", error);
+        } else {
+          console.error("Failed to delete avatar from storage");
         }
       }
       
@@ -143,42 +181,20 @@ const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps) => {
       if (avatarFile) {
         try {
           // If replacing an existing avatar, delete the old one first
-          if (profile?.avatar_url && profile.avatar_url.includes('supabase')) {
-            try {
-              const url = new URL(profile.avatar_url);
-              const pathParts = url.pathname.split('/');
-              const filePath = pathParts.slice(3).join('/');
-              
-              console.log("Removing old avatar file:", filePath);
-              await supabase.storage
-                .from('profile_avatars')
-                .remove([filePath]);
-            } catch (error) {
-              console.error("Error removing old avatar:", error);
-            }
+          if (profile?.avatar_url) {
+            await deleteImageFromStorage(profile.avatar_url);
           }
           
           // Generate a unique file path
           const filePath = `${user.id}/${Date.now()}_${avatarFile.name.replace(/[^a-zA-Z0-9-_.]/g, '_')}`;
           console.log("Uploading avatar to path:", filePath);
           
-          // Check if the bucket exists first
-          const { data: buckets, error: bucketError } = await supabase
-            .storage
-            .listBuckets();
-            
-          console.log("Available storage buckets:", buckets);
-          
-          if (bucketError) {
-            console.error("Error listing buckets:", bucketError);
-          }
-          
           // Upload the file to Supabase Storage
           const { data: uploadData, error: uploadError } = await supabase.storage
             .from('profile_avatars')
             .upload(filePath, avatarFile, {
               cacheControl: '3600',
-              upsert: false
+              upsert: true // Use upsert to overwrite if file exists
             });
             
           if (uploadError) {
@@ -289,13 +305,13 @@ const EditProfileDialog = ({ open, onOpenChange }: EditProfileDialogProps) => {
               <div className="flex flex-col w-full">
                 <Input 
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/png,image/gif"
                   onChange={handleAvatarChange}
                   disabled={uploading}
                   className="w-full"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Upload a profile picture (JPG, PNG, GIF)
+                  Upload a profile picture (JPG, PNG, GIF only)
                 </p>
               </div>
             </div>

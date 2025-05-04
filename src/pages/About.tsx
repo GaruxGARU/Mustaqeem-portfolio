@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import ResumeDownload from '@/components/resume/ResumeDownload';
 import { 
   CircleUser, Book, Briefcase, Code, FolderGit2, Globe, Loader2,
   Camera, Music, Book as BookIcon, Code as CodeIcon, Film, Gamepad2, Palette, 
@@ -304,7 +305,7 @@ const About = () => {
         <div className="flex flex-col items-center text-center mb-16 animate-on-scroll">
           <h1 className="text-4xl font-bold mb-4">About Me</h1>
           <div className="h-1 w-20 bg-primary rounded-full mb-6"></div>
-          <p className="text-muted-foreground max-w-2xl">
+          <p className="text-muted-foreground max-w-2xl mb-6">
             Get to know my background, experience, and what drives me as a developer.
           </p>
         </div>
@@ -664,6 +665,11 @@ const About = () => {
                   ))}
                 </div>
               )}
+            </div>
+
+            {/* Resume Download Section */}
+            <div className="mb-16 animate-on-scroll">
+              <ResumeDownload />
             </div>
           </div>
         </div>
