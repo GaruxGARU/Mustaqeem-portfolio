@@ -40,7 +40,7 @@ const SkillsShowcase = () => {
           throw new Error(error.message);
         }
         
-        setSkills(data as Skill[]);
+        setSkills(data as unknown as Skill[]);
       } catch (err) {
         console.error("Error fetching skills:", err);
         setError('Failed to load skills.');
